@@ -1,2 +1,0 @@
-/usr/bin/ar qc libtinyexr.a CMakeFiles/tinyexr.dir/tinyexr.cc.o
-/usr/bin/ranlib libtinyexr.a
