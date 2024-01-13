@@ -70,9 +70,7 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
         auto to = Vector3f(cam["to"][0], cam["to"][1], cam["to"][2]);
         auto up = Vector3f(cam["up"][0], cam["up"][1], cam["up"][2]);
 
-        offset.x = (from.x + to.x) / 2;
-        offset.y = (from.y + to.y) / 2;
-        offset.z = (from.z + to.z) / 2;
+        offset = from;
 
         this->camera = Camera(
             from - offset,
