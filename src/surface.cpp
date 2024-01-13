@@ -7,7 +7,8 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 {
     std::string objDirectory;
     const size_t last_slash_idx = pathToObj.rfind('/');
-    if (std::string::npos != last_slash_idx) {
+    if (std::string::npos != last_slash_idx)
+    {
         objDirectory = pathToObj.substr(0, last_slash_idx);
     }
 
@@ -15,23 +16,27 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 
     tinyobj::ObjReader reader;
     tinyobj::ObjReaderConfig reader_config;
-    if (!reader.ParseFromFile(pathToObj, reader_config)) {
-        if (!reader.Error().empty()) {
+    if (!reader.ParseFromFile(pathToObj, reader_config))
+    {
+        if (!reader.Error().empty())
+        {
             std::cerr << "TinyObjReader: " << reader.Error();
         }
         exit(1);
     }
 
-    if (!reader.Warning().empty()) {
+    if (!reader.Warning().empty())
+    {
         std::cout << "TinyObjReader: " << reader.Warning();
     }
 
-    auto& attrib = reader.GetAttrib();
-    auto& shapes = reader.GetShapes();
-    auto& materials = reader.GetMaterials();
+    auto &attrib = reader.GetAttrib();
+    auto &shapes = reader.GetShapes();
+    auto &materials = reader.GetMaterials();
 
     // Loop over shapes
-    for (size_t s = 0; s < shapes.size(); s++) {
+    for (size_t s = 0; s < shapes.size(); s++)
+    {
         Surface surf;
         surf.isLight = isLight;
         surf.shapeIdx = shapeIdx;
@@ -39,9 +44,11 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 
         // Loop over faces(polygon)
         size_t index_offset = 0;
-        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
+        {
             size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
-            if (fv > 3) {
+            if (fv > 3)
+            {
                 std::cerr << "Not a triangle mesh" << std::endl;
                 exit(1);
             }
@@ -49,7 +56,8 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
             // Loop over vertices in the face. Assume 3 vertices per-face
             Vector3f vertices[3], normals[3];
             Vector2f uvs[3];
-            for (size_t v = 0; v < fv; v++) {
+            for (size_t v = 0; v < fv; v++)
+            {
                 // access to vertex
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
                 tinyobj::real_t vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
@@ -57,7 +65,8 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 tinyobj::real_t vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
 
                 // Check if `normal_index` is zero or positive. negative = no normal data
-                if (idx.normal_index >= 0) {
+                if (idx.normal_index >= 0)
+                {
                     tinyobj::real_t nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
                     tinyobj::real_t ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
                     tinyobj::real_t nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
@@ -66,7 +75,8 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 }
 
                 // Check if `texcoord_index` is zero or positive. negative = no texcoord data
-                if (idx.texcoord_index >= 0) {
+                if (idx.texcoord_index >= 0)
+                {
                     tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
                     tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
 
@@ -99,19 +109,22 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
             index_offset += fv;
         }
 
-        if (materialIds.size() > 1) {
+        if (materialIds.size() > 1)
+        {
             std::cerr << "One of the meshes has more than one material. This is not allowed." << std::endl;
             exit(1);
         }
 
-
-        if (materialIds.size() == 0) {
+        if (materialIds.size() == 0)
+        {
             std::cerr << "One of the meshes has no material definition, may cause unexpected behaviour." << std::endl;
         }
-        else {
+        else
+        {
             // Load textures from Materials
             auto matId = *materialIds.begin();
-            if (matId != -1) {
+            if (matId != -1)
+            {
                 auto mat = materials[matId];
 
                 surf.diffuse = Vector3f(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
@@ -140,10 +153,12 @@ Interaction Surface::rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n)
     Interaction si;
 
     float dDotN = Dot(ray.d, n);
-    if (dDotN != 0.f) {
+    if (dDotN != 0.f)
+    {
         float t = -Dot((ray.o - p), n) / dDotN;
 
-        if (t >= 0.f) {
+        if (t >= 0.f)
+        {
             si.didIntersect = true;
             si.t = t;
             si.n = n;
@@ -158,7 +173,8 @@ Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vec
 {
     Interaction si = this->rayPlaneIntersect(ray, v1, n);
 
-    if (si.didIntersect) {
+    if (si.didIntersect)
+    {
         bool edge1 = false, edge2 = false, edge3 = false;
 
         // Check edge 1
@@ -182,11 +198,13 @@ Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vec
             edge3 = Dot(nIp, nTri) > 0;
         }
 
-        if (edge1 && edge2 && edge3) {
+        if (edge1 && edge2 && edge3)
+        {
             // Intersected triangle!
             si.didIntersect = true;
         }
-        else {
+        else
+        {
             si.didIntersect = false;
         }
     }
@@ -199,7 +217,8 @@ Interaction Surface::rayIntersect(Ray ray)
     Interaction siFinal;
     float tmin = ray.t;
 
-    for (auto face : this->indices) {
+    for (auto face : this->indices)
+    {
         Vector3f p1 = this->vertices[face.x];
         Vector3f p2 = this->vertices[face.y];
         Vector3f p3 = this->vertices[face.z];
@@ -210,7 +229,8 @@ Interaction Surface::rayIntersect(Ray ray)
         Vector3f n = Normalize(n1 + n2 + n3);
 
         Interaction si = this->rayTriangleIntersect(ray, p1, p2, p3, n);
-        if (si.t <= tmin && si.didIntersect) {
+        if (si.t <= tmin && si.didIntersect)
+        {
             siFinal = si;
             tmin = si.t;
         }

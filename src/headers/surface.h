@@ -3,7 +3,8 @@
 #include "common.h"
 #include "texture.h"
 
-struct Surface {
+struct Surface
+{
     std::vector<Vector3f> vertices, normals;
     std::vector<Vector3i> indices;
     std::vector<Vector2f> uvs;

@@ -2,10 +2,10 @@
 
 Camera::Camera(Vector3f from, Vector3f to, Vector3f up, float fieldOfView, Vector2i imageResolution)
     : from(from),
-    to(to),
-    up(up),
-    fieldOfView(fieldOfView),
-    imageResolution(imageResolution)
+      to(to),
+      up(up),
+      fieldOfView(fieldOfView),
+      imageResolution(imageResolution)
 {
     this->aspect = imageResolution.x / float(imageResolution.y);
 

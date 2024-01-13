@@ -9,8 +9,10 @@ Integrator::Integrator(Scene &scene)
 long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
-    for (int x = 0; x < this->scene.imageResolution.x; x++) {
-        for (int y = 0; y < this->scene.imageResolution.y; y++) {
+    for (int x = 0; x < this->scene.imageResolution.x; x++)
+    {
+        for (int y = 0; y < this->scene.imageResolution.y; y++)
+        {
             Ray cameraRay = this->scene.camera.generateRay(x, y);
             Interaction si = this->scene.rayIntersect(cameraRay);
 
@@ -27,7 +29,8 @@ long long Integrator::render()
 
 int main(int argc, char **argv)
 {
-    if (argc != 3) {
+    if (argc != 3)
+    {
         std::cerr << "Usage: ./render <scene_config> <out_path>";
         return 1;
     }
