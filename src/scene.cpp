@@ -56,7 +56,8 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     }
     catch (nlohmann::json::exception e)
     {
-        std::cerr << "\"output\" field with resolution, filename & spp should be defined in the scene file." << std::endl;
+        std::cerr << "\"output\" field with resolution, filename & spp should be defined in the scene file."
+                  << std::endl;
         exit(1);
     }
 
@@ -72,12 +73,7 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
 
         offset = from;
 
-        this->camera = Camera(
-            from - offset,
-            to - offset,
-            up,
-            float(cam["fieldOfView"]),
-            this->imageResolution);
+        this->camera = Camera(from - offset, to - offset, up, float(cam["fieldOfView"]), this->imageResolution);
     }
     catch (nlohmann::json::exception e)
     {
@@ -99,10 +95,19 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
             {
                 for (auto &v : s.triangles)
                 {
-                    v.vertices[0] -= offset;
-                    v.vertices[1] -= offset;
-                    v.vertices[2] -= offset;
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        v.vertices[i] -= offset;
+                        for (int j = 0; j < 3; ++j)
+                        {
+                            v.aabb.start[j] = std::min(v.aabb.start[j], v.vertices[i][j]);
+                            v.aabb.end[j] = std::max(v.aabb.end[j], v.vertices[i][j]);
+                        }
+                    }
+                    // std::cout << "Triangle: " << v.aabb.start << " AA " << v.aabb.end << "\n";
+                    s.aabb |= v.aabb;
                 }
+                // std::cout << "Surface: " << s.aabb.start << " AA " << s.aabb.end << "\n\n";
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
 

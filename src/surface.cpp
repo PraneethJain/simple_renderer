@@ -86,7 +86,14 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices[v] = Vector3f(vx, vy, vz);
             }
 
-            surf.triangles.push_back({vertices, normals, uvs, std::accumulate(vertices.begin(), vertices.end(), Vector3f{}) / 3});
+            const auto centroid = std::accumulate(vertices.begin(), vertices.end(), Vector3f{}) / 3;
+
+            surf.triangles.push_back({
+                vertices,
+                normals,
+                uvs,
+                centroid,
+            });
 
             // per-face material
             materialIds.insert(shapes[s].mesh.material_ids[f]);
@@ -129,9 +136,15 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
     return surfaces;
 }
 
-bool Surface::hasDiffuseTexture() { return this->diffuseTexture.data != 0; }
+bool Surface::hasDiffuseTexture()
+{
+    return this->diffuseTexture.data != 0;
+}
 
-bool Surface::hasAlphaTexture() { return this->alphaTexture.data != 0; }
+bool Surface::hasAlphaTexture()
+{
+    return this->alphaTexture.data != 0;
+}
 
 Interaction Surface::rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n)
 {
@@ -209,7 +222,6 @@ Interaction Surface::rayIntersect(Ray ray)
 
     for (auto triangle : this->triangles)
     {
-        // Interaction si = this->rayTriangleIntersect(ray, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2], Normalize(triangle.normals[0] + triangle.normals[1] + triangle.normals[2]));
         Interaction si = this->rayTriangleIntersect(ray, triangle);
         if (si.t <= tmin && si.didIntersect)
         {
