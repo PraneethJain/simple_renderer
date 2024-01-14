@@ -86,7 +86,7 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices[v] = Vector3f(vx, vy, vz);
             }
 
-            surf.triangles.push_back({vertices, normals, uvs, (vertices[0] + vertices[1] + vertices[2]) / 3});
+            surf.triangles.push_back({vertices, normals, uvs, std::accumulate(vertices.begin(), vertices.end(), Vector3f{}) / 3});
 
             // per-face material
             materialIds.insert(shapes[s].mesh.material_ids[f]);
@@ -154,8 +154,13 @@ Interaction Surface::rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n)
     return si;
 }
 
-Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n)
+// Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n)
+Interaction Surface::rayTriangleIntersect(Ray ray, Triangle t)
 {
+    auto v1 = t.vertices[0];
+    auto v2 = t.vertices[1];
+    auto v3 = t.vertices[2];
+    auto n = Normalize(std::accumulate(t.normals.begin(), t.normals.end(), Vector3f{}));
     Interaction si = this->rayPlaneIntersect(ray, v1, n);
 
     if (si.didIntersect)
@@ -204,16 +209,8 @@ Interaction Surface::rayIntersect(Ray ray)
 
     for (auto triangle : this->triangles)
     {
-        // Vector3f p1 = this->vertices[face.x];
-        // Vector3f p2 = this->vertices[face.y];
-        // Vector3f p3 = this->vertices[face.z];
-
-        // Vector3f n1 = this->normals[face.x];
-        // Vector3f n2 = this->normals[face.y];
-        // Vector3f n3 = this->normals[face.z];
-        // Vector3f n = Normalize(n1 + n2 + n3);
-
-        Interaction si = this->rayTriangleIntersect(ray, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2], Normalize(triangle.normals[0] + triangle.normals[1] + triangle.normals[2]));
+        // Interaction si = this->rayTriangleIntersect(ray, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2], Normalize(triangle.normals[0] + triangle.normals[1] + triangle.normals[2]));
+        Interaction si = this->rayTriangleIntersect(ray, triangle);
         if (si.t <= tmin && si.didIntersect)
         {
             siFinal = si;
