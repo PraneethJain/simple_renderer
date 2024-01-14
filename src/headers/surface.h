@@ -60,9 +60,9 @@ struct Surface
 
     Texture diffuseTexture, alphaTexture;
 
-    Interaction rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n);
-    Interaction rayTriangleIntersect(Ray ray, Triangle t);
-    Interaction rayIntersect(Ray ray);
+    Interaction rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n);
+    Interaction rayTriangleIntersect(const Ray &ray, Triangle t);
+    Interaction rayIntersect(const Ray &ray);
 
   private:
     bool hasDiffuseTexture();
