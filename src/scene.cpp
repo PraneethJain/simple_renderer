@@ -94,17 +94,15 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
         for (std::string surfacePath : surfacePaths)
         {
             surfacePath = sceneDirectory + "/" + surfacePath;
-
             auto surf = createSurfaces(surfacePath, /*isLight=*/false, /*idx=*/surfaceIdx);
             for (auto &s : surf)
             {
-                Vector3f sum_vertices{};
-                for (auto &v : s.vertices)
+                for (auto &v : s.triangles)
                 {
-                    v -= offset;
-                    sum_vertices += v;
+                    v.vertices[0] -= offset;
+                    v.vertices[1] -= offset;
+                    v.vertices[2] -= offset;
                 }
-                s.centroid = sum_vertices / 3;
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
 

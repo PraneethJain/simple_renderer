@@ -3,12 +3,17 @@
 #include "common.h"
 #include "texture.h"
 
+struct Triangle
+{
+    std::array<Vector3f, 3> vertices;
+    std::array<Vector3f, 3> normals;
+    std::array<Vector2f, 3> uvs;
+    Vector3f centroid;
+};
+
 struct Surface
 {
-    std::vector<Vector3f> vertices, normals;
-    Vector3f centroid;
-    std::vector<Vector3i> indices;
-    std::vector<Vector2f> uvs;
+    std::vector<Triangle> triangles;
 
     bool isLight;
     uint32_t shapeIdx;

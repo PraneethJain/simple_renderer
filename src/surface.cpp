@@ -54,8 +54,8 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
             }
 
             // Loop over vertices in the face. Assume 3 vertices per-face
-            Vector3f vertices[3], normals[3];
-            Vector2f uvs[3];
+            std::array<Vector3f, 3> vertices{}, normals{};
+            std::array<Vector2f, 3> uvs{};
             for (size_t v = 0; v < fv; v++)
             {
                 // access to vertex
@@ -86,22 +86,7 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices[v] = Vector3f(vx, vy, vz);
             }
 
-            int vSize = surf.vertices.size();
-            Vector3i findex(vSize, vSize + 1, vSize + 2);
-
-            surf.vertices.push_back(vertices[0]);
-            surf.vertices.push_back(vertices[1]);
-            surf.vertices.push_back(vertices[2]);
-
-            surf.normals.push_back(normals[0]);
-            surf.normals.push_back(normals[1]);
-            surf.normals.push_back(normals[2]);
-
-            surf.uvs.push_back(uvs[0]);
-            surf.uvs.push_back(uvs[1]);
-            surf.uvs.push_back(uvs[2]);
-
-            surf.indices.push_back(findex);
+            surf.triangles.push_back({vertices, normals, uvs, (vertices[0] + vertices[1] + vertices[2]) / 3});
 
             // per-face material
             materialIds.insert(shapes[s].mesh.material_ids[f]);
@@ -217,18 +202,18 @@ Interaction Surface::rayIntersect(Ray ray)
     Interaction siFinal;
     float tmin = ray.t;
 
-    for (auto face : this->indices)
+    for (auto triangle : this->triangles)
     {
-        Vector3f p1 = this->vertices[face.x];
-        Vector3f p2 = this->vertices[face.y];
-        Vector3f p3 = this->vertices[face.z];
+        // Vector3f p1 = this->vertices[face.x];
+        // Vector3f p2 = this->vertices[face.y];
+        // Vector3f p3 = this->vertices[face.z];
 
-        Vector3f n1 = this->normals[face.x];
-        Vector3f n2 = this->normals[face.y];
-        Vector3f n3 = this->normals[face.z];
-        Vector3f n = Normalize(n1 + n2 + n3);
+        // Vector3f n1 = this->normals[face.x];
+        // Vector3f n2 = this->normals[face.y];
+        // Vector3f n3 = this->normals[face.z];
+        // Vector3f n = Normalize(n1 + n2 + n3);
 
-        Interaction si = this->rayTriangleIntersect(ray, p1, p2, p3, n);
+        Interaction si = this->rayTriangleIntersect(ray, triangle.vertices[0], triangle.vertices[1], triangle.vertices[2], Normalize(triangle.normals[0] + triangle.normals[1] + triangle.normals[2]));
         if (si.t <= tmin && si.didIntersect)
         {
             siFinal = si;
@@ -237,4 +222,15 @@ Interaction Surface::rayIntersect(Ray ray)
     }
 
     return siFinal;
+}
+
+bool IntersectAABB(const Ray &ray, const Vector3f bmin, const Vector3f bmax)
+{
+    float tx1 = (bmin.x - ray.o.x) / ray.d.x, tx2 = (bmax.x - ray.o.x) / ray.d.x;
+    float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
+    float ty1 = (bmin.y - ray.o.y) / ray.d.y, ty2 = (bmax.y - ray.o.y) / ray.d.y;
+    tmin = std::max(tmin, std::min(ty1, ty2)), tmax = std::min(tmax, std::max(ty1, ty2));
+    float tz1 = (bmin.z - ray.o.z) / ray.d.z, tz2 = (bmax.z - ray.o.z) / ray.d.z;
+    tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
+    return tmax >= tmin && tmin < ray.t && tmax > 0;
 }
