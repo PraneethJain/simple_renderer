@@ -6,6 +6,7 @@
 struct Surface
 {
     std::vector<Vector3f> vertices, normals;
+    Vector3f centroid;
     std::vector<Vector3i> indices;
     std::vector<Vector2f> uvs;
 

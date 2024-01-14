@@ -98,10 +98,13 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
             auto surf = createSurfaces(surfacePath, /*isLight=*/false, /*idx=*/surfaceIdx);
             for (auto &s : surf)
             {
+                Vector3f sum_vertices{};
                 for (auto &v : s.vertices)
                 {
                     v -= offset;
+                    sum_vertices += v;
                 }
+                s.centroid = sum_vertices / 3;
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
 
