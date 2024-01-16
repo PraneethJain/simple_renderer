@@ -64,6 +64,11 @@ struct Surface
     Interaction rayTriangleIntersect(const Ray &ray, Triangle t);
     Interaction rayIntersect(const Ray &ray);
 
+    Vector3f center()
+    {
+        return (this->aabb.start + this->aabb.end) / 2;
+    }
+
   private:
     bool hasDiffuseTexture();
     bool hasAlphaTexture();

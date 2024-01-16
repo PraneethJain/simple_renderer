@@ -82,6 +82,7 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     }
 
     // Surface
+    std::vector<Surface *> surf_pointers{};
     try
     {
         auto surfacePaths = sceneConfig["surface"];
@@ -107,6 +108,7 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
                     // std::cout << "Triangle: " << v.aabb.start << " AA " << v.aabb.end << "\n";
                     s.aabb |= v.aabb;
                 }
+                surf_pointers.push_back(&s);
                 // std::cout << "Surface: " << s.aabb.start << " AA " << s.aabb.end << "\n\n";
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
@@ -118,6 +120,9 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     {
         std::cout << "No surfaces defined." << std::endl;
     }
+
+    // Construct the BVH for the scene
+    this->bvh = BVHNode(surf_pointers);
 }
 
 Interaction Scene::rayIntersect(Ray &ray)
