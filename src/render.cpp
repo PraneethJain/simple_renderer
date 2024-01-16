@@ -14,7 +14,7 @@ long long Integrator::render()
         for (int y = 0; y < this->scene.imageResolution.y; y++)
         {
             Ray cameraRay = this->scene.camera.generateRay(x, y);
-            Interaction si = this->scene.rayIntersect(cameraRay);
+            Interaction si = this->scene.bvhIntersect(cameraRay);
 
             if (si.didIntersect)
                 this->outputImage.writePixelColor(0.5f * (si.n + Vector3f(1.f, 1.f, 1.f)), x, y);

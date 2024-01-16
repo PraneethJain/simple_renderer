@@ -71,4 +71,5 @@ struct Scene
     void parse(std::string sceneDirectory, nlohmann::json sceneConfig);
 
     Interaction rayIntersect(Ray &ray);
+    Interaction bvhIntersect(Ray &ray);
 };

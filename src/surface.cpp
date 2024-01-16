@@ -146,19 +146,6 @@ bool Surface::hasAlphaTexture()
     return this->alphaTexture.data != 0;
 }
 
-bool rayAABBIntersect(const Ray &ray, const AABB &aabb)
-{
-    const Vector3f bmin{aabb.start};
-    const Vector3f bmax{aabb.end};
-    float tx1 = (bmin.x - ray.o.x) / ray.d.x, tx2 = (bmax.x - ray.o.x) / ray.d.x;
-    float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
-    float ty1 = (bmin.y - ray.o.y) / ray.d.y, ty2 = (bmax.y - ray.o.y) / ray.d.y;
-    tmin = std::max(tmin, std::min(ty1, ty2)), tmax = std::min(tmax, std::max(ty1, ty2));
-    float tz1 = (bmin.z - ray.o.z) / ray.d.z, tz2 = (bmax.z - ray.o.z) / ray.d.z;
-    tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
-    return tmax >= tmin && tmin < ray.t && tmax > 0;
-}
-
 Interaction Surface::rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n)
 {
     Interaction si;
@@ -233,11 +220,11 @@ Interaction Surface::rayIntersect(const Ray &ray)
     Interaction siFinal;
     float tmin = ray.t;
 
-    if (rayAABBIntersect(ray, this->aabb))
+    if (this->aabb.rayIntersect(ray))
     {
         for (auto triangle : this->triangles)
         {
-            if (rayAABBIntersect(ray, triangle.aabb))
+            if (triangle.aabb.rayIntersect(ray))
             {
                 Interaction si = this->rayTriangleIntersect(ray, triangle);
                 if (si.t <= tmin && si.didIntersect)
