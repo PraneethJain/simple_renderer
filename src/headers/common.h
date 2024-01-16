@@ -1,17 +1,16 @@
 #pragma once
 
+#include <array>
+#include <chrono>
+#include <cmath>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <chrono>
-#include <cmath>
 
 #include "vec.h"
 
 #include "json/include/nlohmann/json.hpp"
-
-#define M_PI 3.14159263f
 
 struct Ray
 {
