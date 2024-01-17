@@ -63,6 +63,11 @@ struct AABB
     {
     }
 
+    Vector3f center()
+    {
+        return (start + end) / 2;
+    }
+
     bool rayIntersect(const Ray &ray)
     {
         const Vector3f bmin{start};
@@ -74,5 +79,61 @@ struct AABB
         float tz1 = (bmin.z - ray.o.z) / ray.d.z, tz2 = (bmax.z - ray.o.z) / ray.d.z;
         tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
         return tmax >= tmin && tmin < ray.t && tmax > 0;
+    }
+};
+
+template <class T> struct BVH
+{
+    std::vector<T *> surfaces;
+    AABB aabb{};
+    BVH<T> *left{nullptr};
+    BVH<T> *right{nullptr};
+
+    BVH<T>()
+    {
+    }
+
+    BVH<T>(std::vector<T *> surfaces) : surfaces{surfaces}
+    {
+        if (surfaces.size() <= 1)
+            return;
+
+        for (auto surface : surfaces)
+        {
+            aabb |= surface->aabb;
+        }
+        int longest_index{0};
+        for (int i{1}; i <= 2; ++i)
+        {
+            if (aabb.end[i] - aabb.start[i] > aabb.end[longest_index] - aabb.start[longest_index])
+            {
+                longest_index = i;
+            }
+        }
+
+        float mid{(aabb.end[longest_index] + aabb.start[longest_index]) / 2};
+        std::vector<T *> left{}, right{};
+        for (auto surf : surfaces)
+        {
+            if (surf->aabb.center()[longest_index] < mid)
+            {
+                left.push_back(surf);
+            }
+            else
+            {
+                right.push_back(surf);
+            }
+        }
+
+        if (left.empty() ^ right.empty()) // if any one is empty, then terminate
+            return;
+
+        this->left = new BVH<T>(left);
+        this->right = new BVH<T>(right);
+    }
+
+    bool is_leaf()
+    {
+        return left == nullptr && right == nullptr;
     }
 };

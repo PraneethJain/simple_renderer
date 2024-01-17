@@ -86,8 +86,6 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices[v] = Vector3f(vx, vy, vz);
             }
 
-            const auto centroid = std::accumulate(vertices.begin(), vertices.end(), Vector3f{}) / 3;
-
             surf.triangles.push_back({
                 vertices,
                 normals,
@@ -242,16 +240,16 @@ Interaction Surface::bvhIntersect(const Ray &ray)
 {
     Interaction siFinal;
     float tmin = ray.t;
-    std::vector<BVHTriangleNode *> stack{&this->bvh};
+    std::vector<BVH<Triangle> *> stack{&this->bvh};
     while (!stack.empty())
     {
-        BVHTriangleNode *cur{stack.back()};
+        auto *cur{stack.back()};
         stack.pop_back();
         if (cur->aabb.rayIntersect(ray))
         {
             if (cur->is_leaf())
             {
-                for (auto triangle : cur->triangles)
+                for (auto triangle : cur->surfaces)
                 {
                     Interaction si = this->rayTriangleIntersect(ray, *triangle);
                     if (si.t <= tmin && si.didIntersect)

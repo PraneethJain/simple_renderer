@@ -104,10 +104,8 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
                             v.aabb.end[j] = std::max(v.aabb.end[j], v.vertices[i][j]);
                         }
                     }
-                    // std::cout << "Triangle: " << v.aabb.start << " AA " << v.aabb.end << "\n";
                     s.aabb |= v.aabb;
                 }
-                // std::cout << "Surface: " << s.aabb.start << " AA " << s.aabb.end << "\n\n";
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
 
@@ -128,19 +126,19 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
         {
             tri_pointers.push_back(&triangle);
         }
-        surface.bvh = BVHTriangleNode(tri_pointers);
+        surface.bvh = BVH<Triangle>(tri_pointers);
         surf_pointers.push_back(&surface);
     }
-    this->bvh = BVHNode(surf_pointers);
+    this->bvh = BVH<Surface>(surf_pointers);
 }
 
 Interaction Scene::bvhIntersect(Ray &ray)
 {
     Interaction siFinal;
-    std::vector<BVHNode *> stack{&this->bvh};
+    std::vector<BVH<Surface> *> stack{&this->bvh};
     while (!stack.empty())
     {
-        BVHNode *cur{stack.back()};
+        auto *cur{stack.back()};
         stack.pop_back();
         if (cur->aabb.rayIntersect(ray))
         {
@@ -148,7 +146,6 @@ Interaction Scene::bvhIntersect(Ray &ray)
             {
                 for (auto &surface : cur->surfaces)
                 {
-                    // std::cout << surface->triangles.size() << "\n";
                     Interaction si = surface->bvhIntersect(ray);
                     if (si.t <= ray.t)
                     {
