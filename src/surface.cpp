@@ -92,7 +92,6 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices,
                 normals,
                 uvs,
-                centroid,
             });
 
             // per-face material
@@ -231,6 +230,46 @@ Interaction Surface::rayIntersect(const Ray &ray)
                 {
                     siFinal = si;
                     tmin = si.t;
+                }
+            }
+        }
+    }
+
+    return siFinal;
+}
+
+Interaction Surface::bvhIntersect(const Ray &ray)
+{
+    Interaction siFinal;
+    float tmin = ray.t;
+    std::vector<BVHTriangleNode *> stack{&this->bvh};
+    while (!stack.empty())
+    {
+        BVHTriangleNode *cur{stack.back()};
+        stack.pop_back();
+        if (cur->aabb.rayIntersect(ray))
+        {
+            if (cur->is_leaf())
+            {
+                for (auto triangle : cur->triangles)
+                {
+                    Interaction si = this->rayTriangleIntersect(ray, *triangle);
+                    if (si.t <= tmin && si.didIntersect)
+                    {
+                        siFinal = si;
+                        tmin = si.t;
+                    }
+                }
+            }
+            else
+            {
+                if (cur->left != nullptr)
+                {
+                    stack.push_back(cur->left);
+                }
+                if (cur->right != nullptr)
+                {
+                    stack.push_back(cur->right);
                 }
             }
         }

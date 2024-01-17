@@ -46,13 +46,16 @@ struct BVHNode
             }
         }
 
-        if (left.empty() ^ right.empty())
-        {
+        if (left.empty() ^ right.empty()) // if any one is empty, then terminate
             return;
-        }
 
         this->left = new BVHNode(left);
         this->right = new BVHNode(right);
+    }
+
+    bool is_leaf()
+    {
+        return left == nullptr && right == nullptr;
     }
 };
 
@@ -72,4 +75,5 @@ struct Scene
 
     Interaction rayIntersect(Ray &ray);
     Interaction bvhIntersect(Ray &ray);
+    Interaction bvhTriangleIntersect(Ray &ray);
 };
