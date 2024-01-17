@@ -8,11 +8,11 @@ struct Triangle
     std::array<Vector3f, 3> vertices;
     std::array<Vector3f, 3> normals;
     std::array<Vector2f, 3> uvs;
+    AABB aabb;
     Vector3f center()
     {
-        return std::accumulate(vertices.begin(), vertices.end(), Vector3f{}) / 2;
+        return (aabb.start + aabb.end) / 2;
     }
-    AABB aabb;
 };
 
 struct BVHTriangleNode
