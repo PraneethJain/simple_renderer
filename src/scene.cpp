@@ -118,6 +118,54 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     {
         std::cout << "No surfaces defined." << std::endl;
     }
+
+    // Construct BVH from the scene
+    std::vector<Surface *> surf_pointers{};
+    for (auto &surface : this->surfaces)
+    {
+        surf_pointers.push_back(&surface);
+    }
+    this->bvh = BVHNode(surf_pointers);
+}
+
+Interaction Scene::bvhIntersect(Ray &ray)
+{
+    Interaction siFinal;
+    std::vector<BVHNode *> stack{&this->bvh};
+    while (!stack.empty())
+    {
+        BVHNode *cur{stack.back()};
+        stack.pop_back();
+        if (cur->aabb.rayIntersect(ray))
+        {
+            if (cur->right == nullptr && cur->left == nullptr)
+            {
+                for (auto &surface : cur->surfaces)
+                {
+                    // std::cout << surface->triangles.size() << "\n";
+                    Interaction si = surface->rayIntersect(ray);
+                    if (si.t <= ray.t)
+                    {
+                        siFinal = si;
+                        ray.t = si.t;
+                    }
+                }
+            }
+            else
+            {
+                if (cur->left != nullptr)
+                {
+                    stack.push_back(cur->left);
+                }
+                if (cur->right != nullptr)
+                {
+                    stack.push_back(cur->right);
+                }
+            }
+        }
+    }
+
+    return siFinal;
 }
 
 Interaction Scene::rayIntersect(Ray &ray)
