@@ -132,8 +132,37 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     this->bvh = BVH<Surface>(surf_pointers);
 }
 
-Interaction Scene::bvhIntersect(Ray &ray)
+Interaction Scene::rayIntersect(Ray &ray, int variant)
 {
+    assert(variant == 0 || variant == 1);
+    Interaction siFinal;
+
+    for (auto &surface : this->surfaces)
+    {
+        Interaction si{};
+        if (variant == 0)
+        {
+
+            si = surface.rayIntersect(ray);
+        }
+        else if (variant == 1)
+        {
+            si = surface.rayAABBIntersect(ray);
+        }
+
+        if (si.t <= ray.t)
+        {
+            siFinal = si;
+            ray.t = si.t;
+        }
+    }
+
+    return siFinal;
+}
+
+Interaction Scene::rayBVHIntersect(Ray &ray, int variant)
+{
+    assert(variant == 2 || variant == 3);
     Interaction siFinal;
     std::vector<BVH<Surface> *> stack{&this->bvh};
     while (!stack.empty())
@@ -146,7 +175,16 @@ Interaction Scene::bvhIntersect(Ray &ray)
             {
                 for (auto &surface : cur->surfaces)
                 {
-                    Interaction si = surface->bvhIntersect(ray);
+                    Interaction si{};
+                    if (variant == 2)
+                    {
+                        si = surface->rayAABBIntersect(ray);
+                    }
+                    else if (variant == 3)
+                    {
+                        si = surface->rayBVHIntersect(ray);
+                    }
+
                     if (si.t <= ray.t)
                     {
                         siFinal = si;
@@ -156,36 +194,15 @@ Interaction Scene::bvhIntersect(Ray &ray)
             }
             else
             {
-                bool REMOVE_THIS{false};
                 if (cur->left != nullptr)
                 {
-                    REMOVE_THIS = true;
                     stack.push_back(cur->left);
                 }
                 if (cur->right != nullptr)
                 {
-                    REMOVE_THIS = true;
                     stack.push_back(cur->right);
                 }
-                assert(REMOVE_THIS);
             }
-        }
-    }
-
-    return siFinal;
-}
-
-Interaction Scene::rayIntersect(Ray &ray)
-{
-    Interaction siFinal;
-
-    for (auto &surface : this->surfaces)
-    {
-        Interaction si = surface.rayIntersect(ray);
-        if (si.t <= ray.t)
-        {
-            siFinal = si;
-            ray.t = si.t;
         }
     }
 

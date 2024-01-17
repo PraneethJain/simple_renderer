@@ -164,7 +164,6 @@ Interaction Surface::rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n)
     return si;
 }
 
-// Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n)
 Interaction Surface::rayTriangleIntersect(const Ray &ray, Triangle t)
 {
     auto v1 = t.vertices[0];
@@ -217,6 +216,24 @@ Interaction Surface::rayIntersect(const Ray &ray)
     Interaction siFinal;
     float tmin = ray.t;
 
+    for (auto triangle : this->triangles)
+    {
+        Interaction si = this->rayTriangleIntersect(ray, triangle);
+        if (si.t <= tmin && si.didIntersect)
+        {
+            siFinal = si;
+            tmin = si.t;
+        }
+    }
+
+    return siFinal;
+}
+
+Interaction Surface::rayAABBIntersect(const Ray &ray)
+{
+    Interaction siFinal;
+    float tmin = ray.t;
+
     if (this->aabb.rayIntersect(ray))
     {
         for (auto triangle : this->triangles)
@@ -236,7 +253,7 @@ Interaction Surface::rayIntersect(const Ray &ray)
     return siFinal;
 }
 
-Interaction Surface::bvhIntersect(const Ray &ray)
+Interaction Surface::rayBVHIntersect(const Ray &ray)
 {
     Interaction siFinal;
     float tmin = ray.t;
