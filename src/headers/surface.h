@@ -28,7 +28,8 @@ struct Surface
     Interaction rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n);
     Interaction rayTriangleIntersect(const Ray &ray, Triangle t);
     Interaction rayIntersect(const Ray &ray);
-    Interaction bvhIntersect(const Ray &ray);
+    Interaction rayAABBIntersect(const Ray &ray);
+    Interaction rayBVHIntersect(const Ray &ray);
 
   private:
     bool hasDiffuseTexture();

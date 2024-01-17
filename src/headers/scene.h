@@ -17,7 +17,6 @@ struct Scene
 
     void parse(std::string sceneDirectory, nlohmann::json sceneConfig);
 
-    Interaction rayIntersect(Ray &ray);
-    Interaction bvhIntersect(Ray &ray);
-    Interaction bvhTriangleIntersect(Ray &ray);
+    Interaction rayIntersect(Ray &ray, int variant);
+    Interaction rayBVHIntersect(Ray &ray, int variant);
 };
