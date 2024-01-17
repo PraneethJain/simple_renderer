@@ -104,10 +104,8 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
                             v.aabb.end[j] = std::max(v.aabb.end[j], v.vertices[i][j]);
                         }
                     }
-                    // std::cout << "Triangle: " << v.aabb.start << " AA " << v.aabb.end << "\n";
                     s.aabb |= v.aabb;
                 }
-                // std::cout << "Surface: " << s.aabb.start << " AA " << s.aabb.end << "\n\n";
             }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
 
@@ -123,27 +121,32 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
     std::vector<Surface *> surf_pointers{};
     for (auto &surface : this->surfaces)
     {
+        std::vector<Triangle *> tri_pointers{};
+        for (auto &triangle : surface.triangles)
+        {
+            tri_pointers.push_back(&triangle);
+        }
+        surface.bvh = BVH<Triangle>(tri_pointers);
         surf_pointers.push_back(&surface);
     }
-    this->bvh = BVHNode(surf_pointers);
+    this->bvh = BVH<Surface>(surf_pointers);
 }
 
 Interaction Scene::bvhIntersect(Ray &ray)
 {
     Interaction siFinal;
-    std::vector<BVHNode *> stack{&this->bvh};
+    std::vector<BVH<Surface> *> stack{&this->bvh};
     while (!stack.empty())
     {
-        BVHNode *cur{stack.back()};
+        auto *cur{stack.back()};
         stack.pop_back();
         if (cur->aabb.rayIntersect(ray))
         {
-            if (cur->right == nullptr && cur->left == nullptr)
+            if (cur->is_leaf())
             {
                 for (auto &surface : cur->surfaces)
                 {
-                    // std::cout << surface->triangles.size() << "\n";
-                    Interaction si = surface->rayIntersect(ray);
+                    Interaction si = surface->bvhIntersect(ray);
                     if (si.t <= ray.t)
                     {
                         siFinal = si;
@@ -153,14 +156,18 @@ Interaction Scene::bvhIntersect(Ray &ray)
             }
             else
             {
+                bool REMOVE_THIS{false};
                 if (cur->left != nullptr)
                 {
+                    REMOVE_THIS = true;
                     stack.push_back(cur->left);
                 }
                 if (cur->right != nullptr)
                 {
+                    REMOVE_THIS = true;
                     stack.push_back(cur->right);
                 }
+                assert(REMOVE_THIS);
             }
         }
     }

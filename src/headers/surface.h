@@ -8,7 +8,6 @@ struct Triangle
     std::array<Vector3f, 3> vertices;
     std::array<Vector3f, 3> normals;
     std::array<Vector2f, 3> uvs;
-    Vector3f centroid;
     AABB aabb;
 };
 
@@ -16,6 +15,7 @@ struct Surface
 {
     std::vector<Triangle> triangles;
     AABB aabb;
+    BVH<Triangle> bvh;
 
     bool isLight;
     uint32_t shapeIdx;
@@ -28,11 +28,7 @@ struct Surface
     Interaction rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n);
     Interaction rayTriangleIntersect(const Ray &ray, Triangle t);
     Interaction rayIntersect(const Ray &ray);
-
-    Vector3f center()
-    {
-        return (this->aabb.start + this->aabb.end) / 2;
-    }
+    Interaction bvhIntersect(const Ray &ray);
 
   private:
     bool hasDiffuseTexture();
