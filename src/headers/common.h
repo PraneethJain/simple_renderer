@@ -63,11 +63,6 @@ struct AABB
     {
     }
 
-    Vector3f center()
-    {
-        return (start + end) / 2;
-    }
-
     bool rayIntersect(const Ray &ray)
     {
         const Vector3f bmin{start};
@@ -115,7 +110,7 @@ template <class T> struct BVH
         std::vector<T *> left{}, right{};
         for (auto surf : surfaces)
         {
-            if (surf->aabb.center()[longest_index] < mid)
+            if (surf->center()[longest_index] < mid)
             {
                 left.push_back(surf);
             }

@@ -9,6 +9,11 @@ struct Triangle
     std::array<Vector3f, 3> normals;
     std::array<Vector2f, 3> uvs;
     AABB aabb;
+
+    Vector3f center()
+    {
+        return (vertices[0] + vertices[1] + vertices[2]) / 3;
+    }
 };
 
 struct Surface
@@ -30,6 +35,11 @@ struct Surface
     Interaction rayIntersect(const Ray &ray);
     Interaction rayAABBIntersect(const Ray &ray);
     Interaction rayBVHIntersect(const Ray &ray);
+
+    Vector3f center()
+    {
+        return (aabb.start + aabb.end) / 2;
+    }
 
   private:
     bool hasDiffuseTexture();
