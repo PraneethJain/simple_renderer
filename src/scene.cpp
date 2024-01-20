@@ -73,7 +73,10 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
 
         offset = from;
 
-        this->camera = Camera(from - offset, to - offset, up, float(cam["fieldOfView"]), this->imageResolution);
+        this->camera = Camera(from, to, up, float(cam["fieldOfView"]), this->imageResolution);
+        camera.from -= from;
+        camera.to -= from;
+        camera.upperLeft -= from;
     }
     catch (nlohmann::json::exception e)
     {
