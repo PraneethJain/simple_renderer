@@ -255,3 +255,20 @@ Interaction Scene::rayIntersect(Ray &ray)
 
     return si;
 }
+
+bool Scene::lightIntersect(const Interaction &si, const Light &light)
+{
+    if (light.light_type == POINT_LIGHT)
+    {
+        auto w{light.v - si.p};
+        auto normalized_w{Normalize(w)};
+        Ray shadowRay{si.p + ERROR * si.n, normalized_w};
+        Interaction shadow{rayIntersect(shadowRay)};
+        return (not shadow.didIntersect) or (shadow.t > (light.v - si.p).Length());
+    }
+    else
+    {
+        Ray shadowRay{si.p + ERROR * si.n, light.v};
+        return not rayIntersect(shadowRay).didIntersect;
+    }
+}

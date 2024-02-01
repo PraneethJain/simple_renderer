@@ -9,7 +9,6 @@ Integrator::Integrator(Scene &scene)
 long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
-    const double ERROR = 5e-6;
 
     for (int x{0}; x < this->scene.imageResolution.x; ++x)
     {
@@ -20,24 +19,9 @@ long long Integrator::render()
             Vector3f color{};
             for (auto light : this->scene.lights)
             {
-                if (light.light_type == POINT_LIGHT)
+                if (this->scene.lightIntersect(si, light))
                 {
-                    auto w{light.v - si.p};
-                    auto normalized_w{Normalize(w)};
-                    Ray shadowRay{si.p + ERROR * si.n, normalized_w};
-                    Interaction shadow{this->scene.rayIntersect(shadowRay)};
-                    if ((not shadow.didIntersect) or (shadow.t > (light.v - si.p).Length()))
-                    {
-                        color += light.radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
-                    }
-                }
-                else if (light.light_type == DIRECTIONAL_LIGHT)
-                {
-                    Ray shadowRay{si.p + ERROR * si.n, light.v};
-                    if (not this->scene.rayIntersect(shadowRay).didIntersect)
-                    {
-                        color += light.radiance * Dot(si.n, light.v) / M_PI;
-                    }
+                    color += light.shade(si);
                 }
             }
             this->outputImage.writePixelColor(color, x, y);
