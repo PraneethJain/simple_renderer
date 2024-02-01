@@ -30,4 +30,5 @@ struct Texture {
     void savePng(std::string path);
 
     Vector3f nearestNeighbourFetch(Vector2f uv);
+    Vector3f bilinearFetch(Vector2f uv);
 };

@@ -238,3 +238,23 @@ Vector3f Texture::nearestNeighbourFetch(Vector2f uv)
 {
     return loadPixelColor(std::roundl(uv[0] * resolution.x), std::roundl(uv[1] * resolution.y));
 }
+
+Vector3f Texture::bilinearFetch(Vector2f uv)
+{
+    /*
+    0  1
+     uv
+    2  3
+    */
+    uv.x *= resolution.x;
+    uv.y *= resolution.y;
+    Vector2f tl{std::floor(uv[0]), std::floor(uv[1])};
+    std::array<Vector2f, 4> p{tl, {tl.x + 1, tl.y}, {tl.x, tl.y + 1}, {tl.x + 1, tl.y + 1}};
+    std::array<Vector3f, 4> c{};
+    std::transform(p.begin(), p.end(), c.begin(), [this](const Vector2f &pos) {
+        return Vector3f{loadPixelColor(static_cast<int>(pos.x), static_cast<int>(pos.y))};
+    });
+
+    return ((uv.y - p[0].y) * ((uv.x - p[0].x) * c[0] + (p[1].x - uv.x) * c[1]) +
+            (p[2].y - uv.y) * ((uv.x - p[2].x) * c[2] + (p[3].x - uv.x) * c[3]));
+}
