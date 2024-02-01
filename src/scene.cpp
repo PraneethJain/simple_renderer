@@ -245,7 +245,14 @@ void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
         if (surfIdxFinal != UINT32_MAX)
         {
             auto surface = this->surfaces[surfIdxFinal];
-            si.color = surface.diffuseTexture.nearestNeighbourFetch(si.uv);
+            if (surface.hasDiffuseTexture())
+            {
+                si.color = surface.diffuseTexture.nearestNeighbourFetch(si.uv);
+            }
+            else
+            {
+                si.color = {1, 1, 1};
+            }
         }
     }
     else
