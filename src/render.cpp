@@ -9,21 +9,31 @@ Integrator::Integrator(Scene &scene)
 long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
-    for (int x = 0; x < this->scene.imageResolution.x; x++)
+    const double ERROR = 5e-6;
+
+    for (int x{0}; x < this->scene.imageResolution.x; ++x)
     {
-        for (int y = 0; y < this->scene.imageResolution.y; y++)
+        for (int y{0}; y < this->scene.imageResolution.y; ++y)
         {
-            Ray cameraRay = this->scene.camera.generateRay(x, y);
-            Interaction si = this->scene.rayIntersect(cameraRay);
-            auto color = Vector3f{};
+            Ray cameraRay{this->scene.camera.generateRay(x, y)};
+            Interaction si{this->scene.rayIntersect(cameraRay)};
+            Vector3f color{};
             for (auto light : this->scene.lights)
             {
                 if (light.light_type == POINT_LIGHT)
                 {
+                    auto w{light.v - si.p};
+                    auto normalized_w{Normalize(w)};
+                    Ray shadowRay{si.p + ERROR * si.n, normalized_w};
+                    Interaction shadow{this->scene.rayIntersect(shadowRay)};
+                    if ((not shadow.didIntersect) or (shadow.t > (light.v - si.p).Length()))
+                    {
+                        color += light.radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
+                    }
                 }
                 else if (light.light_type == DIRECTIONAL_LIGHT)
                 {
-                    Ray shadowRay = Ray(si.p + 1e-3 * si.n, light.v);
+                    Ray shadowRay{si.p + ERROR * si.n, light.v};
                     if (not this->scene.rayIntersect(shadowRay).didIntersect)
                     {
                         color += light.radiance * Dot(si.n, light.v) / M_PI;

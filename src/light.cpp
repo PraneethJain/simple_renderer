@@ -3,7 +3,6 @@
 std::vector<Light> loadLights(const nlohmann::json &sceneConfig)
 {
     std::vector<Light> lights{};
-    std::cout << "here" << std::endl;
     auto point_lights = sceneConfig["pointLights"];
     for (auto point_light : point_lights)
     {
@@ -22,6 +21,5 @@ std::vector<Light> loadLights(const nlohmann::json &sceneConfig)
                           .radiance = Vector3f(radiance[0], radiance[1], radiance[2]),
                           .v = Vector3f(direction[0], direction[1], direction[2])});
     }
-    std::cout << "done" << std::endl;
     return lights;
 }

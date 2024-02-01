@@ -127,13 +127,6 @@ void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
 
     // load lights
     this->lights = loadLights(sceneConfig);
-    for (auto light : lights)
-    {
-        std::cout << light.light_type << std::endl;
-        std::cout << light.radiance << std::endl;
-        std::cout << light.v << std::endl;
-        std::cout << std::endl;
-    }
 }
 
 void Scene::buildBVH()
