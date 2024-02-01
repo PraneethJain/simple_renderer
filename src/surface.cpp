@@ -7,8 +7,7 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 {
     std::string objDirectory;
     const size_t last_slash_idx = pathToObj.rfind('/');
-    if (std::string::npos != last_slash_idx)
-    {
+    if (std::string::npos != last_slash_idx) {
         objDirectory = pathToObj.substr(0, last_slash_idx);
     }
 
@@ -16,27 +15,23 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 
     tinyobj::ObjReader reader;
     tinyobj::ObjReaderConfig reader_config;
-    if (!reader.ParseFromFile(pathToObj, reader_config))
-    {
-        if (!reader.Error().empty())
-        {
+    if (!reader.ParseFromFile(pathToObj, reader_config)) {
+        if (!reader.Error().empty()) {
             std::cerr << "TinyObjReader: " << reader.Error();
         }
         exit(1);
     }
 
-    if (!reader.Warning().empty())
-    {
+    if (!reader.Warning().empty()) {
         std::cout << "TinyObjReader: " << reader.Warning();
     }
 
-    auto &attrib = reader.GetAttrib();
-    auto &shapes = reader.GetShapes();
-    auto &materials = reader.GetMaterials();
+    auto& attrib = reader.GetAttrib();
+    auto& shapes = reader.GetShapes();
+    auto& materials = reader.GetMaterials();
 
     // Loop over shapes
-    for (size_t s = 0; s < shapes.size(); s++)
-    {
+    for (size_t s = 0; s < shapes.size(); s++) {
         Surface surf;
         surf.isLight = isLight;
         surf.shapeIdx = shapeIdx;
@@ -44,20 +39,17 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
 
         // Loop over faces(polygon)
         size_t index_offset = 0;
-        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
-        {
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
             size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
-            if (fv > 3)
-            {
+            if (fv > 3) {
                 std::cerr << "Not a triangle mesh" << std::endl;
                 exit(1);
             }
 
             // Loop over vertices in the face. Assume 3 vertices per-face
-            std::array<Vector3f, 3> vertices{}, normals{};
-            std::array<Vector2f, 3> uvs{};
-            for (size_t v = 0; v < fv; v++)
-            {
+            Vector3f vertices[3], normals[3];
+            Vector2f uvs[3];
+            for (size_t v = 0; v < fv; v++) {
                 // access to vertex
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
                 tinyobj::real_t vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
@@ -65,8 +57,7 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 tinyobj::real_t vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
 
                 // Check if `normal_index` is zero or positive. negative = no normal data
-                if (idx.normal_index >= 0)
-                {
+                if (idx.normal_index >= 0) {
                     tinyobj::real_t nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
                     tinyobj::real_t ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
                     tinyobj::real_t nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
@@ -75,8 +66,7 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 }
 
                 // Check if `texcoord_index` is zero or positive. negative = no texcoord data
-                if (idx.texcoord_index >= 0)
-                {
+                if (idx.texcoord_index >= 0) {
                     tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
                     tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
 
@@ -86,11 +76,71 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 vertices[v] = Vector3f(vx, vy, vz);
             }
 
-            surf.triangles.push_back({
-                vertices,
-                normals,
-                uvs,
-            });
+            int vSize = surf.vertices.size();
+            Vector3i findex(vSize, vSize + 1, vSize + 2);
+
+            surf.vertices.push_back(vertices[0]);
+            surf.vertices.push_back(vertices[1]);
+            surf.vertices.push_back(vertices[2]);
+
+            surf.normals.push_back(normals[0]);
+            surf.normals.push_back(normals[1]);
+            surf.normals.push_back(normals[2]);
+
+            surf.uvs.push_back(uvs[0]);
+            surf.uvs.push_back(uvs[1]);
+            surf.uvs.push_back(uvs[2]);
+
+            surf.indices.push_back(findex);
+
+            // Create Triangle
+            Tri triangle;
+            triangle.v1 = vertices[0];
+            triangle.v2 = vertices[1];
+            triangle.v3 = vertices[2];
+
+            triangle.uv1 = uvs[0];
+            triangle.uv2 = uvs[1];
+            triangle.uv3 = uvs[2];
+
+            triangle.normal = Normalize(normals[0] + normals[1] + normals[2]);
+            triangle.centroid = (triangle.v1 + triangle.v2 + triangle.v3) / 3.f;
+
+            for (int i = 0; i < 3; i++) {
+                triangle.bbox.min = Vector3f(
+                    std::min(triangle.bbox.min.x, vertices[i].x),
+                    std::min(triangle.bbox.min.y, vertices[i].y),
+                    std::min(triangle.bbox.min.z, vertices[i].z)
+                );
+
+                triangle.bbox.max = Vector3f(
+                    std::max(triangle.bbox.max.x, vertices[i].x),
+                    std::max(triangle.bbox.max.y, vertices[i].y),
+                    std::max(triangle.bbox.max.z, vertices[i].z)
+                );
+
+                triangle.bbox.centroid = (triangle.bbox.min + triangle.bbox.max) / 2.f;
+            }
+
+            surf.tris.push_back(triangle);
+
+            // BVH indirection indices
+            surf.triIdxs.push_back(f);
+
+            // Update surface AABB
+            surf.bbox.min = Vector3f(
+                std::min(surf.bbox.min.x, triangle.bbox.min.x),
+                std::min(surf.bbox.min.y, triangle.bbox.min.y),
+                std::min(surf.bbox.min.z, triangle.bbox.min.z)
+            );
+
+            surf.bbox.max = Vector3f(
+                std::max(surf.bbox.max.x, triangle.bbox.max.x),
+                std::max(surf.bbox.max.y, triangle.bbox.max.y),
+                std::max(surf.bbox.max.z, triangle.bbox.max.z)
+            );
+
+            surf.bbox.centroid = (surf.bbox.min + surf.bbox.max) / 2.f;
 
             // per-face material
             materialIds.insert(shapes[s].mesh.material_ids[f]);
@@ -98,22 +148,19 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
             index_offset += fv;
         }
 
-        if (materialIds.size() > 1)
-        {
+        if (materialIds.size() > 1) {
             std::cerr << "One of the meshes has more than one material. This is not allowed." << std::endl;
             exit(1);
         }
 
-        if (materialIds.size() == 0)
-        {
+
+        if (materialIds.size() == 0) {
             std::cerr << "One of the meshes has no material definition, may cause unexpected behaviour." << std::endl;
         }
-        else
-        {
+        else {
             // Load textures from Materials
             auto matId = *materialIds.begin();
-            if (matId != -1)
-            {
+            if (matId != -1) {
                 auto mat = materials[matId];
 
                 surf.diffuse = Vector3f(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
@@ -123,8 +170,19 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
                 surf.alpha = mat.specular[0];
                 if (mat.alpha_texname != "")
                     surf.alphaTexture = Texture(objDirectory + "/" + mat.alpha_texname);
+            } else {
+                // Assign a default diffuse color of (1,1,1)
+                surf.diffuse = Vector3f(1, 1, 1);
             }
         }
+
+        // Allocate memory for BVH & build the BVH
+        surf.nodes = (BVHNode*)malloc((2 * surf.triIdxs.size() - 1) * sizeof(BVHNode));
+        for (int i = 0; i < 2 * surf.triIdxs.size() - 1; i++) {
+            surf.nodes[i] = BVHNode();
+        }
+
+        surf.buildBVH();
 
         surfaces.push_back(surf);
         shapeIdx++;
@@ -133,27 +191,19 @@ std::vector<Surface> createSurfaces(std::string pathToObj, bool isLight, uint32_
     return surfaces;
 }
 
-bool Surface::hasDiffuseTexture()
-{
-    return this->diffuseTexture.data != 0;
-}
+bool Surface::hasDiffuseTexture() { return this->diffuseTexture.data != 0; }
 
-bool Surface::hasAlphaTexture()
-{
-    return this->alphaTexture.data != 0;
-}
+bool Surface::hasAlphaTexture() { return this->alphaTexture.data != 0; }
 
-Interaction Surface::rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n)
+Interaction Surface::rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n)
 {
     Interaction si;
 
     float dDotN = Dot(ray.d, n);
-    if (dDotN != 0.f)
-    {
+    if (dDotN != 0.f) {
         float t = -Dot((ray.o - p), n) / dDotN;
 
-        if (t >= 0.f)
-        {
+        if (t >= 0.f) {
             si.didIntersect = true;
             si.t = t;
             si.n = n;
@@ -164,16 +214,11 @@ Interaction Surface::rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n)
     return si;
 }
 
-Interaction Surface::rayTriangleIntersect(const Ray &ray, Triangle t)
+Interaction Surface::rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n)
 {
-    auto v1 = t.vertices[0];
-    auto v2 = t.vertices[1];
-    auto v3 = t.vertices[2];
-    auto n = Normalize(std::accumulate(t.normals.begin(), t.normals.end(), Vector3f{}));
     Interaction si = this->rayPlaneIntersect(ray, v1, n);
 
-    if (si.didIntersect)
-    {
+    if (si.didIntersect) {
         bool edge1 = false, edge2 = false, edge3 = false;
 
         // Check edge 1
@@ -197,13 +242,11 @@ Interaction Surface::rayTriangleIntersect(const Ray &ray, Triangle t)
             edge3 = Dot(nIp, nTri) > 0;
         }
 
-        if (edge1 && edge2 && edge3)
-        {
+        if (edge1 && edge2 && edge3) {
             // Intersected triangle!
             si.didIntersect = true;
         }
-        else
-        {
+        else {
             si.didIntersect = false;
         }
     }
@@ -211,84 +254,129 @@ Interaction Surface::rayTriangleIntersect(const Ray &ray, Triangle t)
     return si;
 }
 
-Interaction Surface::rayIntersect(const Ray &ray)
+void Surface::buildBVH()
 {
-    Interaction siFinal;
-    float tmin = ray.t;
+    // Root node
+    this->numBVHNodes += 1;
 
-    for (auto triangle : this->triangles)
-    {
-        Interaction si = this->rayTriangleIntersect(ray, triangle);
-        if (si.t <= tmin && si.didIntersect)
-        {
-            siFinal = si;
-            tmin = si.t;
-        }
-    }
+    BVHNode& rootNode = this->nodes[0];
+    rootNode.firstPrim = 0;
+    rootNode.primCount = this->triIdxs.size();
 
-    return siFinal;
+    this->updateNodeBounds(0);
+    this->subdivideNode(0);
 }
 
-Interaction Surface::rayAABBIntersect(const Ray &ray)
+uint32_t Surface::getIdx(uint32_t idx)
 {
-    Interaction siFinal;
-    float tmin = ray.t;
-
-    if (this->aabb.rayIntersect(ray))
-    {
-        for (auto triangle : this->triangles)
-        {
-            if (triangle.aabb.rayIntersect(ray))
-            {
-                Interaction si = this->rayTriangleIntersect(ray, triangle);
-                if (si.t <= tmin && si.didIntersect)
-                {
-                    siFinal = si;
-                    tmin = si.t;
-                }
-            }
-        }
-    }
-
-    return siFinal;
+    return this->triIdxs[idx];
 }
 
-Interaction Surface::rayBVHIntersect(const Ray &ray)
+void Surface::updateNodeBounds(uint32_t nodeIdx)
 {
-    Interaction siFinal;
-    float tmin = ray.t;
-    std::vector<BVH<Triangle> *> stack{&this->bvh};
-    while (!stack.empty())
-    {
-        auto *cur{stack.back()};
-        stack.pop_back();
-        if (cur->aabb.rayIntersect(ray))
-        {
-            if (cur->is_leaf())
-            {
-                for (auto triangle : cur->surfaces)
-                {
-                    Interaction si = this->rayTriangleIntersect(ray, *triangle);
-                    if (si.t <= tmin && si.didIntersect)
-                    {
-                        siFinal = si;
-                        tmin = si.t;
-                    }
-                }
-            }
-            else
-            {
-                if (cur->left != nullptr)
-                {
-                    stack.push_back(cur->left);
-                }
-                if (cur->right != nullptr)
-                {
-                    stack.push_back(cur->right);
-                }
-            }
+    BVHNode& node = this->nodes[nodeIdx];
+
+    for (int i = 0; i < node.primCount; i++) {
+        auto triangle = this->tris[this->getIdx(i + node.firstPrim)];
+        node.bbox.min = Vector3f(
+            std::min(node.bbox.min.x, triangle.bbox.min.x),
+            std::min(node.bbox.min.y, triangle.bbox.min.y),
+            std::min(node.bbox.min.z, triangle.bbox.min.z)
+        );
+
+        node.bbox.max = Vector3f(
+            std::max(node.bbox.max.x, triangle.bbox.max.x),
+            std::max(node.bbox.max.y, triangle.bbox.max.y),
+            std::max(node.bbox.max.z, triangle.bbox.max.z)
+        );
+
+        node.bbox.centroid = (node.bbox.min + node.bbox.max) / 2.f;
+    }
+}
+
+void Surface::subdivideNode(uint32_t nodeIdx)
+{
+    BVHNode& node = this->nodes[nodeIdx];
+
+    if (node.primCount <= 1) return;
+
+    Vector3f extent = node.bbox.max - node.bbox.min;
+
+    int ax = 0;
+    if (extent.y > extent.x) ax = 1;
+    if (extent.z > extent[ax]) ax = 2;
+    float split = node.bbox.min[ax] + extent[ax] * 0.5f;
+
+    int i = node.firstPrim;
+    int j = i + node.primCount - 1;
+
+    while (i <= j) {
+        if (this->tris[this->getIdx(i)].centroid[ax] < split)
+            i++;
+        else {
+            auto temp = this->triIdxs[i];
+            this->triIdxs[i] = this->triIdxs[j];
+            this->triIdxs[j--] = temp;
         }
     }
 
-    return siFinal;
+    int leftCount = i - node.firstPrim;
+    if (leftCount == 0 || leftCount == node.primCount) return;
+
+    uint32_t lidx = this->numBVHNodes++;
+    BVHNode& left = this->nodes[lidx];
+    left.firstPrim = node.firstPrim;
+    left.primCount = leftCount;
+    this->updateNodeBounds(lidx);
+
+    uint32_t ridx = this->numBVHNodes++;
+    BVHNode& right = this->nodes[ridx];
+    right.firstPrim = i;
+    right.primCount = node.primCount - leftCount;
+    this->updateNodeBounds(ridx);
+
+    node.left = lidx;
+    node.right = ridx;
+    node.primCount = 0;
+
+    this->subdivideNode(lidx);
+    this->subdivideNode(ridx);
+}
+
+void Surface::intersectBVH(uint32_t nodeIdx, Ray& ray, Interaction& si)
+{
+    BVHNode& node = this->nodes[nodeIdx];
+
+    if (!node.bbox.intersects(ray)) return;
+
+    if (node.primCount != 0) {
+        // Leaf
+        for (uint32_t i = 0; i < node.primCount; i++) {
+            Interaction siIntermediate = this->rayTriangleIntersect(
+                ray,
+                this->tris[this->getIdx(i + node.firstPrim)].v1,
+                this->tris[this->getIdx(i + node.firstPrim)].v2,
+                this->tris[this->getIdx(i + node.firstPrim)].v3,
+                this->tris[this->getIdx(i + node.firstPrim)].normal
+            );
+            if (siIntermediate.t <= ray.t && siIntermediate.didIntersect) {
+                si = siIntermediate;
+                ray.t = si.t;
+            }
+        }
+    }
+    else {
+        this->intersectBVH(node.left, ray, si);
+        this->intersectBVH(node.right, ray, si);
+    }
+}
+
+Interaction Surface::rayIntersect(Ray& ray)
+{
+    Interaction si;
+    si.didIntersect = false;
+
+    this->intersectBVH(0, ray, si);
+
+    return si;
 }

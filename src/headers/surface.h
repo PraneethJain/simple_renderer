@@ -3,24 +3,26 @@
 #include "common.h"
 #include "texture.h"
 
-struct Triangle
-{
-    std::array<Vector3f, 3> vertices;
-    std::array<Vector3f, 3> normals;
-    std::array<Vector2f, 3> uvs;
-    AABB aabb;
-
-    Vector3f center()
-    {
-        return (vertices[0] + vertices[1] + vertices[2]) / 3;
-    }
+struct Tri {
+    Vector3f v1, v2, v3;
+    Vector2f uv1, uv2, uv3;
+    Vector3f normal;
+    Vector3f centroid;
+    
+    AABB bbox;
 };
 
-struct Surface
-{
-    std::vector<Triangle> triangles;
-    AABB aabb;
-    BVH<Triangle> bvh;
+struct Surface {
+    std::vector<Vector3f> vertices, normals;
+    std::vector<Vector3i> indices;
+    std::vector<Vector2f> uvs;
+
+    BVHNode* nodes;
+    int numBVHNodes = 0;
+
+    std::vector<Tri> tris;
+    std::vector<uint32_t> triIdxs;
+    AABB bbox;
 
     bool isLight;
     uint32_t shapeIdx;
@@ -30,18 +32,17 @@ struct Surface
 
     Texture diffuseTexture, alphaTexture;
 
-    Interaction rayPlaneIntersect(const Ray &ray, Vector3f p, Vector3f n);
-    Interaction rayTriangleIntersect(const Ray &ray, Triangle t);
-    Interaction rayIntersect(const Ray &ray);
-    Interaction rayAABBIntersect(const Ray &ray);
-    Interaction rayBVHIntersect(const Ray &ray);
+    void buildBVH();
+    uint32_t getIdx(uint32_t idx);
+    void updateNodeBounds(uint32_t nodeIdx);
+    void subdivideNode(uint32_t nodeIdx);
+    void intersectBVH(uint32_t nodeIdx, Ray& ray, Interaction& si);
 
-    Vector3f center()
-    {
-        return (aabb.start + aabb.end) / 2;
-    }
+    Interaction rayPlaneIntersect(Ray ray, Vector3f p, Vector3f n);
+    Interaction rayTriangleIntersect(Ray ray, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f n);
+    Interaction rayIntersect(Ray& ray);
 
-  private:
+private:
     bool hasDiffuseTexture();
     bool hasAlphaTexture();
 };

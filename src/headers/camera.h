@@ -2,8 +2,7 @@
 
 #include "common.h"
 
-struct Camera
-{
+struct Camera {
     Vector3f from, to, up;
     float fieldOfView;
     Vector2i imageResolution;
@@ -15,7 +14,7 @@ struct Camera
     Vector3f pixelDeltaU, pixelDeltaV;
     Vector3f upperLeft;
 
-    Camera(){};
+    Camera() {};
     Camera(Vector3f from, Vector3f to, Vector3f up, float fieldOfView, Vector2i imageResolution);
 
     Ray generateRay(int x, int y);

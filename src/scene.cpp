@@ -3,12 +3,10 @@
 Scene::Scene(std::string sceneDirectory, std::string sceneJson)
 {
     nlohmann::json sceneConfig;
-    try
-    {
+    try {
         sceneConfig = nlohmann::json::parse(sceneJson);
     }
-    catch (std::runtime_error e)
-    {
+    catch (std::runtime_error e) {
         std::cerr << "Could not parse json." << std::endl;
         exit(1);
     }
@@ -26,19 +24,16 @@ Scene::Scene(std::string pathToJson)
     const size_t last_slash_idx = pathToJson.rfind('/');
 #endif
 
-    if (std::string::npos != last_slash_idx)
-    {
+    if (std::string::npos != last_slash_idx) {
         sceneDirectory = pathToJson.substr(0, last_slash_idx);
     }
 
     nlohmann::json sceneConfig;
-    try
-    {
+    try {
         std::ifstream sceneStream(pathToJson.c_str());
         sceneStream >> sceneConfig;
     }
-    catch (std::runtime_error e)
-    {
+    catch (std::runtime_error e) {
         std::cerr << "Could not load scene .json file." << std::endl;
         exit(1);
     }
@@ -49,165 +44,193 @@ Scene::Scene(std::string pathToJson)
 void Scene::parse(std::string sceneDirectory, nlohmann::json sceneConfig)
 {
     // Output
-    try
-    {
+    try {
         auto res = sceneConfig["output"]["resolution"];
         this->imageResolution = Vector2i(res[0], res[1]);
     }
-    catch (nlohmann::json::exception e)
-    {
-        std::cerr << "\"output\" field with resolution, filename & spp should be defined in the scene file."
-                  << std::endl;
+    catch (nlohmann::json::exception e) {
+        std::cerr << "\"output\" field with resolution, filename & spp should be defined in the scene file." << std::endl;
         exit(1);
     }
 
     // Cameras
-
-    Vector3f offset{};
-    try
-    {
+    try {
         auto cam = sceneConfig["camera"];
-        auto from = Vector3f(cam["from"][0], cam["from"][1], cam["from"][2]);
-        auto to = Vector3f(cam["to"][0], cam["to"][1], cam["to"][2]);
-        auto up = Vector3f(cam["up"][0], cam["up"][1], cam["up"][2]);
 
-        offset = from;
-
-        this->camera = Camera(from, to, up, float(cam["fieldOfView"]), this->imageResolution);
-        camera.from -= from;
-        camera.to -= from;
-        camera.upperLeft -= from;
+        this->camera = Camera(
+            Vector3f(cam["from"][0], cam["from"][1], cam["from"][2]),
+            Vector3f(cam["to"][0], cam["to"][1], cam["to"][2]),
+            Vector3f(cam["up"][0], cam["up"][1], cam["up"][2]),
+            float(cam["fieldOfView"]),
+            this->imageResolution
+        );
     }
-    catch (nlohmann::json::exception e)
-    {
+    catch (nlohmann::json::exception e) {
         std::cerr << "No camera(s) defined. Atleast one camera should be defined." << std::endl;
         exit(1);
     }
 
     // Surface
-    try
-    {
+    try {
         auto surfacePaths = sceneConfig["surface"];
 
         uint32_t surfaceIdx = 0;
-        for (std::string surfacePath : surfacePaths)
-        {
+        for (std::string surfacePath : surfacePaths) {
             surfacePath = sceneDirectory + "/" + surfacePath;
+
             auto surf = createSurfaces(surfacePath, /*isLight=*/false, /*idx=*/surfaceIdx);
-            for (auto &s : surf)
-            {
-                for (auto &v : s.triangles)
-                {
-                    for (int i = 0; i < 3; ++i)
-                    {
-                        v.vertices[i] -= offset;
-                        for (int j = 0; j < 3; ++j)
-                        {
-                            v.aabb.start[j] = std::min(v.aabb.start[j], v.vertices[i][j]);
-                            v.aabb.end[j] = std::max(v.aabb.end[j], v.vertices[i][j]);
-                        }
-                    }
-                    s.aabb |= v.aabb;
-                }
-            }
             this->surfaces.insert(this->surfaces.end(), surf.begin(), surf.end());
+
+            // Update scene AABB & surfaceIdxs (used for indirection in BVH)
+            int c = 0;
+            for (auto& s : surf) {
+                this->bbox.min = Vector3f(std::min(this->bbox.min.x, s.bbox.min.x),
+                    std::min(this->bbox.min.y, s.bbox.min.y),
+                    std::min(this->bbox.min.z, s.bbox.min.z));
+
+                this->bbox.max = Vector3f(std::max(this->bbox.max.x, s.bbox.max.x),
+                    std::max(this->bbox.max.y, s.bbox.max.y),
+                    std::max(this->bbox.max.z, s.bbox.max.z));
+
+                // Update indirection indices for BVH
+                this->surfaceIdxs.push_back(surfaceIdx + c);
+                c += 1;
+            }
 
             surfaceIdx = surfaceIdx + surf.size();
         }
+
+        // Allocate memory for BVH based on max
+        this->nodes = (BVHNode*) malloc((2 * this->surfaceIdxs.size() - 1) * sizeof(BVHNode));
+        for (int i = 0; i < 2 * this->surfaceIdxs.size() - 1; i++) {
+            this->nodes[i] = BVHNode();
+        }
     }
-    catch (nlohmann::json::exception e)
-    {
+    catch (nlohmann::json::exception e) {
         std::cout << "No surfaces defined." << std::endl;
     }
 
-    // Construct BVH from the scene
-    std::vector<Surface *> surf_pointers{};
-    for (auto &surface : this->surfaces)
-    {
-        std::vector<Triangle *> tri_pointers{};
-        for (auto &triangle : surface.triangles)
-        {
-            tri_pointers.push_back(&triangle);
-        }
-        surface.bvh = BVH<Triangle>(tri_pointers);
-        surf_pointers.push_back(&surface);
-    }
-    this->bvh = BVH<Surface>(surf_pointers);
+    // Build the BVH
+    this->buildBVH();
 }
 
-Interaction Scene::rayIntersect(Ray &ray, int variant)
+void Scene::buildBVH()
 {
-    assert(variant == 0 || variant == 1);
-    Interaction siFinal;
+    // Root node
+    this->numBVHNodes += 1;
 
-    for (auto &surface : this->surfaces)
-    {
-        Interaction si{};
-        if (variant == 0)
-        {
+    BVHNode& rootNode = this->nodes[0];
+    rootNode.firstPrim = 0;
+    rootNode.primCount = this->surfaceIdxs.size();
 
-            si = surface.rayIntersect(ray);
-        }
-        else if (variant == 1)
-        {
-            si = surface.rayAABBIntersect(ray);
-        }
-
-        if (si.t <= ray.t)
-        {
-            siFinal = si;
-            ray.t = si.t;
-        }
-    }
-
-    return siFinal;
+    this->updateNodeBounds(0);
+    this->subdivideNode(0);
 }
 
-Interaction Scene::rayBVHIntersect(Ray &ray, int variant)
+uint32_t Scene::getIdx(uint32_t idx)
 {
-    assert(variant == 2 || variant == 3);
-    Interaction siFinal;
-    std::vector<BVH<Surface> *> stack{&this->bvh};
-    while (!stack.empty())
-    {
-        auto *cur{stack.back()};
-        stack.pop_back();
-        if (cur->aabb.rayIntersect(ray))
-        {
-            if (cur->is_leaf())
-            {
-                for (auto &surface : cur->surfaces)
-                {
-                    Interaction si{};
-                    if (variant == 2)
-                    {
-                        si = surface->rayAABBIntersect(ray);
-                    }
-                    else if (variant == 3)
-                    {
-                        si = surface->rayBVHIntersect(ray);
-                    }
+    return this->surfaceIdxs[idx];
+}
 
-                    if (si.t <= ray.t)
-                    {
-                        siFinal = si;
-                        ray.t = si.t;
-                    }
-                }
-            }
-            else
-            {
-                if (cur->left != nullptr)
-                {
-                    stack.push_back(cur->left);
-                }
-                if (cur->right != nullptr)
-                {
-                    stack.push_back(cur->right);
-                }
-            }
+void Scene::updateNodeBounds(uint32_t nodeIdx)
+{
+    BVHNode& node = this->nodes[nodeIdx];
+
+    for (int i = 0; i < node.primCount; i++) {
+        auto surf = this->surfaces[this->getIdx(i + node.firstPrim)];
+        node.bbox.min = Vector3f(
+            std::min(node.bbox.min.x, surf.bbox.min.x),
+            std::min(node.bbox.min.y, surf.bbox.min.y),
+            std::min(node.bbox.min.z, surf.bbox.min.z)
+        );
+
+        node.bbox.max = Vector3f(
+            std::max(node.bbox.max.x, surf.bbox.max.x),
+            std::max(node.bbox.max.y, surf.bbox.max.y),
+            std::max(node.bbox.max.z, surf.bbox.max.z)
+        );
+
+        node.bbox.centroid = (node.bbox.min + node.bbox.max) / 2.f;
+    }
+}
+
+void Scene::subdivideNode(uint32_t nodeIdx)
+{
+    BVHNode& node = this->nodes[nodeIdx];
+
+    if (node.primCount <= 1) return;
+
+    Vector3f extent = node.bbox.max - node.bbox.min;
+
+    int ax = 0;
+    if (extent.y > extent.x) ax = 1;
+    if (extent.z > extent[ax]) ax = 2;
+    float split = node.bbox.min[ax] + extent[ax] * 0.5f;
+
+    int i = node.firstPrim;
+    int j = i + node.primCount - 1;
+
+    while(i <= j) {
+        if (this->surfaces[this->getIdx(i)].bbox.centroid[ax] < split)
+            i++;
+        else {
+            auto temp = this->surfaceIdxs[i];
+            this->surfaceIdxs[i] = this->surfaceIdxs[j];
+            this->surfaceIdxs[j--] = temp;
         }
     }
 
-    return siFinal;
+    int leftCount = i - node.firstPrim;
+    if (leftCount == 0 || leftCount == node.primCount) return;
+
+    uint32_t lidx = this->numBVHNodes++;
+    BVHNode& left = this->nodes[lidx];
+    left.firstPrim = node.firstPrim;
+    left.primCount = leftCount;
+    this->updateNodeBounds(lidx);
+    
+    uint32_t ridx = this->numBVHNodes++;
+    BVHNode& right = this->nodes[ridx];
+    right.firstPrim = i;
+    right.primCount = node.primCount - leftCount;
+    this->updateNodeBounds(ridx);
+
+    node.left = lidx;
+    node.right = ridx;
+    node.primCount = 0;
+
+    this->subdivideNode(lidx);
+    this->subdivideNode(ridx);
+}
+
+void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction& si)
+{
+    BVHNode& node = this->nodes[nodeIdx];
+
+    if (!node.bbox.intersects(ray)) return;
+
+    if (node.primCount != 0) {
+        // Leaf
+        for (uint32_t i = 0; i < node.primCount; i++) {
+            Interaction siIntermediate = this->surfaces[this->getIdx(i + node.firstPrim)].rayIntersect(ray);
+            if (siIntermediate.t <= ray.t) {
+                si = siIntermediate;
+                ray.t = si.t;
+            }
+        }
+    }
+    else {
+        this->intersectBVH(node.left, ray, si);
+        this->intersectBVH(node.right, ray, si);
+    }
+}
+
+Interaction Scene::rayIntersect(Ray& ray)
+{
+    Interaction si;
+    si.didIntersect = false;
+
+    this->intersectBVH(0, ray, si);
+
+    return si;
 }
