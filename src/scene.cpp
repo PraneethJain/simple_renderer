@@ -226,17 +226,26 @@ void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
     if (!node.bbox.intersects(ray))
         return;
 
+    uint32_t surfIdxFinal{UINT32_MAX};
     if (node.primCount != 0)
     {
         // Leaf
         for (uint32_t i = 0; i < node.primCount; i++)
         {
-            Interaction siIntermediate = this->surfaces[this->getIdx(i + node.firstPrim)].rayIntersect(ray);
+            uint32_t surfIdx{this->getIdx(i + node.firstPrim)};
+            Interaction siIntermediate = this->surfaces[surfIdx].rayIntersect(ray);
             if (siIntermediate.t <= ray.t)
             {
                 si = siIntermediate;
                 ray.t = si.t;
+                surfIdxFinal = surfIdx;
             }
+        }
+
+        if (surfIdxFinal != UINT32_MAX)
+        {
+            auto surface = this->surfaces[surfIdxFinal];
+            si.color = surface.diffuseTexture.nearestNeighbourFetch(si.uv);
         }
     }
     else

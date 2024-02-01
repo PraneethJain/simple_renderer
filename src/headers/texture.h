@@ -28,4 +28,6 @@ struct Texture {
     void save(std::string path);
     void saveExr(std::string path);
     void savePng(std::string path);
+
+    Vector3f nearestNeighbourFetch(Vector2f uv);
 };

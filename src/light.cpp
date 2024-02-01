@@ -30,11 +30,11 @@ Vector3f Light::shade(const Interaction &si)
     {
         auto w{this->v - si.p};
         auto normalized_w{Normalize(w)};
-        return this->radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
+        return si.color * this->radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
     }
     else if (this->light_type == DIRECTIONAL_LIGHT)
     {
-        return this->radiance * Dot(si.n, this->v) / M_PI;
+        return si.color * this->radiance * Dot(si.n, this->v) / M_PI;
     }
 
     std::cerr << "Invalid light source!" << std::endl;

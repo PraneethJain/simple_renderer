@@ -373,6 +373,7 @@ void Surface::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
     if (!node.bbox.intersects(ray))
         return;
 
+    uint32_t triIdxFinal{UINT32_MAX};
     if (node.primCount != 0)
     {
         // Leaf
@@ -381,12 +382,22 @@ void Surface::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
             const uint32_t triIdx{this->getIdx(i + node.firstPrim)};
             Interaction siIntermediate = this->rayTriangleIntersect(ray, this->tris[triIdx].v1, this->tris[triIdx].v2,
                                                                     this->tris[triIdx].v3, this->tris[triIdx].normal);
-            siIntermediate.triIdx = triIdx;
             if (siIntermediate.t <= ray.t && siIntermediate.didIntersect)
             {
                 si = siIntermediate;
                 ray.t = si.t;
+                triIdxFinal = triIdx;
             }
+        }
+
+        if (triIdxFinal != UINT32_MAX)
+        {
+            const Tri tri{this->tris[triIdxFinal]};
+            const float fullArea{Tri::area(tri.v1, tri.v2, tri.v3)};
+            const float gamma{Tri::area(tri.v1, tri.v2, si.p) / fullArea};
+            const float alpha{Tri::area(tri.v2, tri.v3, si.p) / fullArea};
+            const float beta{Tri::area(tri.v3, tri.v1, si.p) / fullArea};
+            si.uv = alpha * tri.uv1 + beta * tri.uv2 + gamma * tri.uv3;
         }
     }
     else
