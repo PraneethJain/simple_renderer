@@ -26,6 +26,7 @@ struct Interaction
     Vector3f p, n;
     float t = 1e30f;
     bool didIntersect = false;
+    uint32_t triIdx;
 };
 
 struct AABB
