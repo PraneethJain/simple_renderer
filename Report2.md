@@ -15,15 +15,36 @@
 
 ## Outputs
 
-![directional_light_no_texture.png](./outputs/directional_light_no_texture.png)
-![donuts_no_texture.png](./outputs/donuts_no_texture.png)
-![donuts_0.png](./outputs/donuts_0.png)
-![point_light_1.png](./outputs/point_light_1.png)
-![directional_light_1.png](./outputs/directional_light_1.png)
-![point_light_0.png](./outputs/point_light_0.png)
-![many_lights_no_texture.png](./outputs/many_lights_no_texture.png)
-![point_light_no_texture.png](./outputs/point_light_no_texture.png)
-![directional_light_0.png](./outputs/directional_light_0.png)
-![donuts_1.png](./outputs/donuts_1.png)
-![many_lights_1.png](./outputs/many_lights_1.png)
-![many_lights_0.png](./outputs/many_lights_0.png)
+> left: no texture, middle: nearest neigbour interpolation, right: bilinear interpolation
+
+### Point Light
+
+<p align="middle">
+  <img src="outputs/point_light_no_texture.png" align="middle" width="32%" />
+  <img src="outputs/point_light_0.png" align="middle" width="32%" />
+  <img src="outputs/point_light_1.png" align="middle" width="32%" />
+</p>
+
+### Directional Light
+
+<p align="middle">
+  <img src="outputs/directional_light_no_texture.png" align="middle" width="32%" />
+  <img src="outputs/directional_light_0.png" align="middle" width="32%" />
+  <img src="outputs/directional_light_1.png" align="middle" width="32%" />
+</p>
+
+### Many Lights
+
+<p align="middle">
+  <img src="outputs/many_lights_no_texture.png" align="middle" width="32%" />
+  <img src="outputs/many_lights_0.png" align="middle" width="32%" />
+  <img src="outputs/many_lights_1.png" align="middle" width="32%" />
+</p>
+
+### Donuts
+
+<p align="middle">
+  <img src="outputs/donuts_no_texture.png" align="middle" width="32%" />
+  <img src="outputs/donuts_0.png" align="middle" width="32%" />
+  <img src="outputs/donuts_1.png" align="middle" width="32%" />
+</p>
