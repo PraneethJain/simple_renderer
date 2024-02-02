@@ -1,6 +1,9 @@
-default: build (run-all "3")
+default:
+  just --list
 
-alias br := build-run-all
+alias a1 := assignment-1
+alias a2 := assignment-2
+
 
 prep:
     rm -rf src/build
@@ -8,12 +11,28 @@ prep:
     mkdir -p outputs
     cmake -S src -B src/build
 
-build-run-all variant: build (run-all variant)
+assignment-1 variant: build (run-all-1 variant)
+
+assignment-2 variant: build (run-all-2 variant)
 
 build:
     make -j8 -C src/build
 
-run-all variant: (run-cornell variant) (run-donuts variant) (run-tabletop variant)
+run-all-2 variant: (run-point variant) (run-directional variant) (run-many variant) (run-donut variant)
+
+run-point variant:
+    src/build/render "assignment_2/Question 2/CornellBox/point_light.json" outputs/point_light_{{variant}}.png {{variant}}
+
+run-directional variant:
+    src/build/render "assignment_2/Question 2/CornellBox/directional_light.json" outputs/directional_light_{{variant}}.png {{variant}}
+
+run-many variant:
+    src/build/render "assignment_2/Question 2/CornellBox/many_lights.json" outputs/many_lights_{{variant}}.png {{variant}}
+
+run-donut variant:
+    src/build/render "assignment_2/Question 2/Donuts/scene.json" outputs/donuts_{{variant}}.png {{variant}}
+
+run-all-1 variant: (run-cornell variant) (run-donuts variant) (run-tabletop variant)
 
 run-cornell variant: (run-cornell-low variant) (run-cornell-high variant)
 
