@@ -10,21 +10,28 @@ long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    for (int x{0}; x < this->scene.imageResolution.x; ++x)
+    for (int x{0}; x < scene.imageResolution.x; ++x)
     {
-        for (int y{0}; y < this->scene.imageResolution.y; ++y)
+        for (int y{0}; y < scene.imageResolution.y; ++y)
         {
-            Ray cameraRay{this->scene.camera.generateRay(x, y)};
-            Interaction si{this->scene.rayIntersect(cameraRay)};
+            Ray cameraRay{scene.camera.generateRay(x, y)};
+            Interaction si{scene.rayIntersect(cameraRay)};
             Vector3f color{};
-            for (auto light : this->scene.lights)
+            for (auto light : scene.lights)
             {
-                if (this->scene.lightIntersect(si, light))
+                if (scene.lightIntersect(si, light) && si.surfIdx != UINT32_MAX && si.triIdx != UINT32_MAX)
                 {
-                    color += light.shade(si);
+                    Vector3f textureColor{1, 1, 1};
+                    if (scene.surfaces[si.surfIdx].hasDiffuseTexture())
+                    {
+                        textureColor = scene.surfaces[si.surfIdx].diffuseTexture.fetch(
+                            scene.surfaces[si.surfIdx].tris[si.triIdx], si.p, this->scene.interpolation_variant);
+                    }
+
+                    color += light.shade(si, textureColor);
                 }
             }
-            this->outputImage.writePixelColor(color, x, y);
+            outputImage.writePixelColor(color, x, y);
         }
     }
     auto finishTime = std::chrono::high_resolution_clock::now();

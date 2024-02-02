@@ -226,7 +226,6 @@ void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
     if (!node.bbox.intersects(ray))
         return;
 
-    uint32_t surfIdxFinal{UINT32_MAX};
     if (node.primCount != 0)
     {
         // Leaf
@@ -238,31 +237,7 @@ void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
             {
                 si = siIntermediate;
                 ray.t = si.t;
-                surfIdxFinal = surfIdx;
-            }
-        }
-
-        if (surfIdxFinal != UINT32_MAX)
-        {
-            auto surface = this->surfaces[surfIdxFinal];
-            if (surface.hasDiffuseTexture())
-            {
-                if (this->interpolation_variant == 0)
-                {
-                    si.color = surface.diffuseTexture.nearestNeighbourFetch(si.uv);
-                }
-                else if (this->interpolation_variant == 1)
-                {
-                    si.color = surface.diffuseTexture.bilinearFetch(si.uv);
-                }
-                else
-                {
-                    std::cerr << "Invalid interpolation variant!" << std::endl;
-                }
-            }
-            else
-            {
-                si.color = {1, 1, 1};
+                si.surfIdx = surfIdx;
             }
         }
     }

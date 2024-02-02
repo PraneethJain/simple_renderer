@@ -24,17 +24,18 @@ std::vector<Light> loadLights(const nlohmann::json &sceneConfig)
     return lights;
 }
 
-Vector3f Light::shade(const Interaction &si)
+Vector3f Light::shade(const Interaction &si, Vector3f color)
 {
+
     if (this->light_type == POINT_LIGHT)
     {
         auto w{this->v - si.p};
         auto normalized_w{Normalize(w)};
-        return si.color * this->radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
+        return color * this->radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
     }
     else if (this->light_type == DIRECTIONAL_LIGHT)
     {
-        return si.color * this->radiance * Dot(si.n, this->v) / M_PI;
+        return color * this->radiance * Dot(si.n, this->v) / M_PI;
     }
 
     std::cerr << "Invalid light source!" << std::endl;

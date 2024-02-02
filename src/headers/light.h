@@ -14,7 +14,7 @@ struct Light
     LightType light_type;
     Vector3f radiance;
     Vector3f v;
-    Vector3f shade(const Interaction &si);
+    Vector3f shade(const Interaction &si, Vector3f c);
 };
 
 std::vector<Light> loadLights(const nlohmann::json &sceneConfig);

@@ -31,4 +31,5 @@ struct Texture {
 
     Vector3f nearestNeighbourFetch(Vector2f uv);
     Vector3f bilinearFetch(Vector2f uv);
+    Vector3f fetch(Tri t, Vector3f p, int interpolation_variant);
 };

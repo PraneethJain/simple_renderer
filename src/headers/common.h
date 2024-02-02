@@ -26,8 +26,9 @@ struct Interaction
     Vector3f p, n;
     float t = 1e30f;
     bool didIntersect = false;
+    uint32_t surfIdx = UINT32_MAX;
+    uint32_t triIdx = UINT32_MAX;
     Vector2f uv;
-    Vector3f color;
 };
 
 struct AABB
@@ -45,6 +46,30 @@ struct AABB
         float tz1 = (min.z - ray.o.z) / ray.d.z, tz2 = (max.z - ray.o.z) / ray.d.z;
         tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
         return tmax >= tmin && tmin < ray.t && tmax > 0;
+    }
+};
+
+struct Tri
+{
+    Vector3f v1, v2, v3;
+    Vector2f uv1, uv2, uv3;
+    Vector3f normal;
+    Vector3f centroid;
+
+    AABB bbox;
+
+    Vector2f getUV(Vector3f p)
+    {
+        const float fullArea{Tri::area(v1, v2, v3)};
+        const float gamma{Tri::area(v1, v2, p) / fullArea};
+        const float alpha{Tri::area(v2, v3, p) / fullArea};
+        const float beta{Tri::area(v3, v1, p) / fullArea};
+        return alpha * uv1 + beta * uv2 + gamma * uv3;
+    }
+
+    static float area(Vector3f v1, Vector3f v2, Vector3f v3)
+    {
+        return Cross(v1 - v2, v1 - v3).Length() / 2.f;
     }
 };
 

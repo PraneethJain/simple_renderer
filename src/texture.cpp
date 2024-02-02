@@ -236,7 +236,7 @@ void Texture::savePng(std::string path)
 
 Vector3f Texture::nearestNeighbourFetch(Vector2f uv)
 {
-    return loadPixelColor(std::roundl(uv[0] * resolution.x), std::roundl(uv[1] * resolution.y));
+    return loadPixelColor(std::round(uv[0] * resolution.x), std::round(uv[1] * resolution.y));
 }
 
 Vector3f Texture::bilinearFetch(Vector2f uv)
@@ -257,4 +257,26 @@ Vector3f Texture::bilinearFetch(Vector2f uv)
 
     return ((uv.y - p[0].y) * ((uv.x - p[0].x) * c[0] + (p[1].x - uv.x) * c[1]) +
             (p[2].y - uv.y) * ((uv.x - p[2].x) * c[2] + (p[3].x - uv.x) * c[3]));
+}
+
+Vector3f Texture::fetch(Tri tri, Vector3f p, int interpolation_variant)
+{
+    const float fullArea{Tri::area(tri.v1, tri.v2, tri.v3)};
+    const float gamma{Tri::area(tri.v1, tri.v2, p) / fullArea};
+    const float alpha{Tri::area(tri.v2, tri.v3, p) / fullArea};
+    const float beta{Tri::area(tri.v3, tri.v1, p) / fullArea};
+    const Vector2f uv{alpha * tri.uv1 + beta * tri.uv2 + gamma * tri.uv3};
+    if (interpolation_variant == 0)
+    {
+        return nearestNeighbourFetch(uv);
+    }
+    else if (interpolation_variant == 1)
+    {
+        return bilinearFetch(uv);
+    }
+    else
+    {
+        std::cerr << "Invalid interpolation variant" << std::endl;
+        return {};
+    }
 }

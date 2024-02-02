@@ -3,21 +3,6 @@
 #include "common.h"
 #include "texture.h"
 
-struct Tri
-{
-    Vector3f v1, v2, v3;
-    Vector2f uv1, uv2, uv3;
-    Vector3f normal;
-    Vector3f centroid;
-
-    AABB bbox;
-
-    static float area(Vector3f v1, Vector3f v2, Vector3f v3)
-    {
-        return Cross(v1 - v2, v1 - v3).Length() / 2.f;
-    }
-};
-
 struct Surface
 {
     std::vector<Vector3f> vertices, normals;
