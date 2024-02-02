@@ -33,4 +33,6 @@ struct Scene
 
     double ERROR{5e-6};
     bool lightIntersect(const Interaction &si, const Light &light);
+
+    int interpolation_variant;
 };

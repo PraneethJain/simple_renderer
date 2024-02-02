@@ -247,7 +247,18 @@ void Scene::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
             auto surface = this->surfaces[surfIdxFinal];
             if (surface.hasDiffuseTexture())
             {
-                si.color = surface.diffuseTexture.bilinearFetch(si.uv);
+                if (this->interpolation_variant == 0)
+                {
+                    si.color = surface.diffuseTexture.nearestNeighbourFetch(si.uv);
+                }
+                else if (this->interpolation_variant == 1)
+                {
+                    si.color = surface.diffuseTexture.bilinearFetch(si.uv);
+                }
+                else
+                {
+                    std::cerr << "Invalid interpolation variant!" << std::endl;
+                }
             }
             else
             {

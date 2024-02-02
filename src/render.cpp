@@ -34,13 +34,13 @@ long long Integrator::render()
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cerr << "Usage: ./render <scene_config> <out_path>";
+        std::cerr << "Usage: ./render <scene_config> <out_path> <interpolation_variant>";
         return 1;
     }
     Scene scene(argv[1]);
-
+    scene.interpolation_variant = static_cast<int>(strtol(argv[3], NULL, 10));
     Integrator rayTracer(scene);
     auto renderTime = rayTracer.render();
 
