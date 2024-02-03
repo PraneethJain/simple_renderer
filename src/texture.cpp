@@ -248,15 +248,38 @@ Vector3f Texture::bilinearFetch(Vector2f uv)
     */
     uv.x *= resolution.x;
     uv.y *= resolution.y;
-    Vector2f tl{std::floor(uv[0]), std::floor(uv[1])};
-    std::array<Vector2f, 4> p{tl, {tl.x + 1, tl.y}, {tl.x, tl.y + 1}, {tl.x + 1, tl.y + 1}};
-    std::array<Vector3f, 4> c{};
-    std::transform(p.begin(), p.end(), c.begin(), [this](const Vector2f &pos) {
-        return Vector3f{loadPixelColor(static_cast<int>(pos.x), static_cast<int>(pos.y))};
-    });
+    if (resolution.x == std::floor(resolution.x) && resolution.y == std::floor(resolution.y))
+    {
+        return loadPixelColor(uv.x, uv.y);
+    }
+    else if (uv.x == std::floor(uv.x))
+    {
+        Vector2f up{uv.x, std::floor(uv.y)};
+        Vector2f down{uv.x, std::floor(uv.y + 1)};
+        Vector3f color_up{loadPixelColor(up.x, up.y)};
+        Vector3f color_down{loadPixelColor(down.x, down.y)};
+        return (uv.y - up.y) * color_up + (down.y - uv.y) * color_down;
+    }
+    else if (uv.y == std::floor(uv.y))
+    {
+        Vector2f left{std::floor(uv.x), uv.y};
+        Vector2f right{std::floor(uv.x + 1), uv.y};
+        Vector3f color_left{loadPixelColor(left.x, left.y)};
+        Vector3f color_right{loadPixelColor(right.x, right.y)};
+        return (uv.x - left.x) * color_left + (right.x - uv.x) * color_right;
+    }
+    else
+    {
+        Vector2f tl{std::floor(uv[0]), std::floor(uv[1])};
+        std::array<Vector2f, 4> p{tl, {tl.x + 1, tl.y}, {tl.x, tl.y + 1}, {tl.x + 1, tl.y + 1}};
+        std::array<Vector3f, 4> c{};
+        std::transform(p.begin(), p.end(), c.begin(), [this](const Vector2f &pos) {
+            return Vector3f{loadPixelColor(static_cast<int>(pos.x), static_cast<int>(pos.y))};
+        });
 
-    return ((uv.y - p[0].y) * ((uv.x - p[0].x) * c[0] + (p[1].x - uv.x) * c[1]) +
-            (p[2].y - uv.y) * ((uv.x - p[2].x) * c[2] + (p[3].x - uv.x) * c[3]));
+        return ((uv.y - p[0].y) * ((uv.x - p[0].x) * c[0] + (p[1].x - uv.x) * c[1]) +
+                (p[2].y - uv.y) * ((uv.x - p[2].x) * c[2] + (p[3].x - uv.x) * c[3]));
+    }
 }
 
 Vector3f Texture::fetch(Tri tri, Vector3f p, int interpolation_variant)
