@@ -9,7 +9,7 @@ prep:
 build:
     make -j8 -C src/build
 
-run-all variant: (run-point variant) (run-directional variant) (run-many variant) (run-donut variant)
+run-all variant: (run-point variant) (run-directional variant) (run-many variant) (run-donut variant) (run-hammer variant)
 
 run-point variant:
     src/build/render "assignment_2/Question 2/CornellBox/point_light.json" outputs/point_light_{{variant}}.png {{variant}}
@@ -26,3 +26,6 @@ run-many variant:
 run-donut variant:
     src/build/render "assignment_2/Question 2/Donuts/scene.json" outputs/donuts_{{variant}}.png {{variant}}
     src/build/render "assignment_2/Question 1/Donuts/scene.json" outputs/donuts_no_texture.png {{variant}}
+
+run-hammer variant:
+    src/build/render "assignment_2/Hammer/hammer.json" outputs/hammer_{{variant}}.png {{variant}}
