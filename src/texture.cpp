@@ -69,6 +69,8 @@ The top left corner of the texture is mapped to '0,0'.
 */
 Vector3f Texture::loadPixelColor(int x, int y)
 {
+    x = std::clamp(x, 0, resolution.x - 1);
+    y = std::clamp(y, 0, resolution.y - 1);
     Vector3f rval(0.f, 0.f, 0.f);
     if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA)
     {
