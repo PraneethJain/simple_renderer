@@ -19,7 +19,8 @@ struct Texture {
 
     void allocate(TextureType type, Vector2i resolution);
     void writePixelColor(Vector3f color, int x, int y);
-    Vector3f loadPixelColor(int x, int y);
+
+    Vector3f nearestNeighbourFetch(Vector2f uv);
     
     void loadJpg(std::string pathToJpg);
     void loadPng(std::string pathToPng);
@@ -28,8 +29,4 @@ struct Texture {
     void save(std::string path);
     void saveExr(std::string path);
     void savePng(std::string path);
-
-    Vector3f nearestNeighbourFetch(Vector2f uv);
-    Vector3f bilinearFetch(Vector2f uv);
-    Vector3f fetch(Tri t, Vector3f p, int interpolation_variant);
 };

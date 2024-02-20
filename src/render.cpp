@@ -9,29 +9,28 @@ Integrator::Integrator(Scene &scene)
 long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
+    for (int x = 0; x < this->scene.imageResolution.x; x++) {
+        for (int y = 0; y < this->scene.imageResolution.y; y++) {
+            Ray cameraRay = this->scene.camera.generateRay(x, y);
+            Interaction si = this->scene.rayIntersect(cameraRay);
+            Vector3f result(0, 0, 0);
 
-    for (int x{0}; x < scene.imageResolution.x; ++x)
-    {
-        for (int y{0}; y < scene.imageResolution.y; ++y)
-        {
-            Ray cameraRay{scene.camera.generateRay(x, y)};
-            Interaction si{scene.rayIntersect(cameraRay)};
-            Vector3f color{};
-            for (auto light : scene.lights)
-            {
-                if (scene.lightIntersect(si, light) && si.surfIdx != UINT32_MAX && si.triIdx != UINT32_MAX)
-                {
-                    Vector3f textureColor{1, 1, 1};
-                    if (scene.surfaces[si.surfIdx].hasDiffuseTexture())
-                    {
-                        textureColor = scene.surfaces[si.surfIdx].diffuseTexture.fetch(
-                            scene.surfaces[si.surfIdx].tris[si.triIdx], si.p, this->scene.interpolation_variant);
+            if (si.didIntersect) {
+                Vector3f radiance;
+                LightSample ls;
+                for (Light &light : this->scene.lights) {
+                    std::tie(radiance, ls) = light.sample(&si);
+
+                    Ray shadowRay(si.p + 1e-3f * si.n, ls.wo);
+                    Interaction siShadow = this->scene.rayIntersect(shadowRay);
+
+                    if (!siShadow.didIntersect || siShadow.t > ls.d) {
+                        result += si.bsdf->eval(&si, si.toLocal(ls.wo))  * radiance * std::abs(Dot(si.n, ls.wo));
                     }
-
-                    color += light.shade(si, textureColor);
                 }
             }
-            outputImage.writePixelColor(color, x, y);
+
+            this->outputImage.writePixelColor(result, x, y);
         }
     }
     auto finishTime = std::chrono::high_resolution_clock::now();
@@ -41,16 +40,16 @@ long long Integrator::render()
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
-    {
-        std::cerr << "Usage: ./render <scene_config> <out_path> <interpolation_variant>";
+    if (argc != 5) {
+        std::cerr << "Usage: ./render <scene_config> <out_path> <num_samples> <sampling_strategy>";
         return 1;
     }
     Scene scene(argv[1]);
-    scene.interpolation_variant = static_cast<int>(strtol(argv[3], NULL, 10));
-    Integrator rayTracer(scene);
-    auto renderTime = rayTracer.render();
 
+    Integrator rayTracer(scene);
+    int spp = atoi(argv[3]);
+    auto renderTime = rayTracer.render();
+    
     std::cout << "Render Time: " << std::to_string(renderTime / 1000.f) << " ms" << std::endl;
     rayTracer.outputImage.save(argv[2]);
 

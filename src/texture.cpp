@@ -8,22 +8,31 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
+float gammaTransform(float val) {
+    // Uncomment below to disable gamma transform during debugging
+    // return val;
+
+    float transformed = std::pow(val, 1 / 2.2);
+    float clamped = std::min(transformed, 1.0f);
+    clamped = std::max(clamped, 0.0f);
+
+    return clamped;
+}
+
 Texture::Texture(std::string pathToImage)
 {
     size_t pos = pathToImage.find(".exr");
 
-    if (pos > pathToImage.length())
-    {
+    if (pos > pathToImage.length()) {
         this->type = TextureType::UNSIGNED_INTEGER_ALPHA;
         pos = pathToImage.find(".png");
 
-        if (pos > pathToImage.length())
+        if (pos > pathToImage.length()) 
             this->loadJpg(pathToImage);
         else
             this->loadPng(pathToImage);
     }
-    else
-    {
+    else {
         this->type = TextureType::FLOAT_ALPHA;
         this->loadExr(pathToImage);
     }
@@ -34,49 +43,30 @@ void Texture::allocate(TextureType type, Vector2i resolution)
     this->resolution = resolution;
     this->type = type;
 
-    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA)
-    {
-        uint32_t *dpointer = (uint32_t *)malloc(this->resolution.x * this->resolution.y * sizeof(uint32_t));
+    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA) {
+        uint32_t* dpointer = (uint32_t*) malloc(this->resolution.x * this->resolution.y * sizeof(uint32_t));
         this->data = (uint64_t)dpointer;
     }
-    else if (this->type == TextureType::FLOAT_ALPHA)
-    {
-        float *dpointer = (float *)malloc(this->resolution.x * this->resolution.y * 4 * sizeof(float));
+    else if (this->type == TextureType::FLOAT_ALPHA) {
+        float* dpointer = (float*)malloc(this->resolution.x * this->resolution.y * 4 * sizeof(float));
         this->data = (uint64_t)dpointer;
     }
 }
 
-void Texture::writePixelColor(Vector3f color, int x, int y)
+
+
+
+Vector3f Texture::nearestNeighbourFetch(Vector2f uv)
 {
-    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA)
-    {
-        uint32_t *dpointer = (uint32_t *)this->data;
-
-        uint32_t r = static_cast<uint32_t>(std::min(color.x * 255.0f, 255.f));
-        uint32_t g = static_cast<uint32_t>(std::min(color.y * 255.0f, 255.f)) << 8;
-        uint32_t b = static_cast<uint32_t>(std::min(color.z * 255.0f, 255.f)) << 16;
-        uint32_t a = 255 << 24;
-
-        uint32_t final = r | g | b | a;
-
-        dpointer[y * this->resolution.x + x] = final;
-    }
-}
-
-/*
-Reads the color defined at integer coordinates 'x,y'.
-The top left corner of the texture is mapped to '0,0'.
-*/
-Vector3f Texture::loadPixelColor(int x, int y)
-{
-    x = std::clamp(x, 0, resolution.x - 1);
-    y = std::clamp(y, 0, resolution.y - 1);
     Vector3f rval(0.f, 0.f, 0.f);
-    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA)
-    {
-        uint32_t *dpointer = (uint32_t *)this->data;
 
-        uint32_t val = dpointer[y * this->resolution.x + x];
+    int xIndex = (int) std::floor(uv.x * (this->resolution.x - 1));
+    int yIndex = (int) std::floor(uv.y * (this->resolution.y - 1));
+
+    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA) {
+        uint32_t* dpointer = (uint32_t*)this->data;
+
+        uint32_t val = dpointer[yIndex * this->resolution.x + xIndex];
         uint32_t r = (val >> 0) & 255u;
         uint32_t g = (val >> 8) & 255u;
         uint32_t b = (val >> 16) & 255u;
@@ -89,32 +79,54 @@ Vector3f Texture::loadPixelColor(int x, int y)
     return rval;
 }
 
+
+
+
+
+void Texture::writePixelColor(Vector3f color, int x, int y)
+{
+    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA) {
+        uint32_t* dpointer = (uint32_t*)this->data;
+
+        uint32_t r = static_cast<uint32_t>(gammaTransform(color.x) * 255.0f);
+        uint32_t g = static_cast<uint32_t>(gammaTransform(color.y) * 255.0f) << 8;
+        uint32_t b = static_cast<uint32_t>(gammaTransform(color.z) * 255.0f) << 16;
+        uint32_t a = 255 << 24;
+
+        uint32_t final = r | g | b | a;
+
+        dpointer[y * this->resolution.x + x] = final;
+    } else {
+        float *dpointer = (float *)this->data;
+        dpointer[y * resolution.x * 4 + x * 4 + 0] = color.x;
+        dpointer[y * resolution.x * 4 + x * 4 + 1] = color.y;
+        dpointer[y * resolution.x * 4 + x * 4 + 2] = color.z;
+        dpointer[y * resolution.x * 4 + x * 4 + 3] = 1.f;
+    }
+}
+
 void Texture::loadJpg(std::string pathToJpg)
 {
     Vector2i res;
     int comp;
-    unsigned char *image = stbi_load(pathToJpg.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
+    unsigned char* image = stbi_load(pathToJpg.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
     int textureID = -1;
-    if (image)
-    {
+    if (image) {
         this->resolution = res;
         this->data = (uint64_t)image;
 
         /* iw - actually, it seems that stbi loads the pictures
             mirrored along the y axis - mirror them here */
-        for (int y = 0; y < res.y / 2; y++)
-        {
-            uint32_t *line_y = (uint32_t *)this->data + y * res.x;
-            uint32_t *mirrored_y = (uint32_t *)this->data + (res.y - 1 - y) * res.x;
+        for (int y = 0; y < res.y / 2; y++) {
+            uint32_t* line_y = (uint32_t*)this->data + y * res.x;
+            uint32_t* mirrored_y = (uint32_t*)this->data + (res.y - 1 - y) * res.x;
             int mirror_y = res.y - 1 - y;
-            for (int x = 0; x < res.x; x++)
-            {
+            for (int x = 0; x < res.x; x++) {
                 std::swap(line_y[x], mirrored_y[x]);
             }
         }
     }
-    else
-    {
+    else {
         std::cerr << "Could not load .jpg texture from " << pathToJpg << std::endl;
         std::cerr << stbi_failure_reason() << std::endl;
         exit(1);
@@ -125,28 +137,24 @@ void Texture::loadPng(std::string pathToPng)
 {
     Vector2i res;
     int comp;
-    unsigned char *image = stbi_load(pathToPng.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
+    unsigned char* image = stbi_load(pathToPng.c_str(), &res.x, &res.y, &comp, STBI_rgb_alpha);
     int textureID = -1;
-    if (image)
-    {
+    if (image) {
         this->resolution = res;
         this->data = (uint64_t)image;
 
         /* iw - actually, it seems that stbi loads the pictures
             mirrored along the y axis - mirror them here */
-        for (int y = 0; y < res.y / 2; y++)
-        {
-            uint32_t *line_y = (uint32_t *)this->data + y * res.x;
-            uint32_t *mirrored_y = (uint32_t *)this->data + (res.y - 1 - y) * res.x;
+        for (int y = 0; y < res.y / 2; y++) {
+            uint32_t* line_y = (uint32_t*)this->data + y * res.x;
+            uint32_t* mirrored_y = (uint32_t*)this->data + (res.y - 1 - y) * res.x;
             int mirror_y = res.y - 1 - y;
-            for (int x = 0; x < res.x; x++)
-            {
+            for (int x = 0; x < res.x; x++) {
                 std::swap(line_y[x], mirrored_y[x]);
             }
         }
     }
-    else
-    {
+    else {
         std::cerr << "Could not load .png texture from " << pathToPng << std::endl;
         std::cerr << stbi_failure_reason() << std::endl;
         exit(1);
@@ -157,19 +165,17 @@ void Texture::loadExr(std::string pathToExr)
 {
     int width;
     int height;
-    const char *err = nullptr; // or nullptr in C++11
-
-    float *data;
+    const char* err = nullptr; // or nullptr in C++11
+    
+    float* data;
     int ret = LoadEXR(&data, &width, &height, pathToExr.c_str(), &err);
     this->data = (uint64_t)data;
 
-    if (ret != TINYEXR_SUCCESS)
-    {
+    if (ret != TINYEXR_SUCCESS) {
         std::cerr << "Could not load .exr texture map from " << pathToExr << std::endl;
         exit(1);
     }
-    else
-    {
+    else {
         this->resolution = Vector2i(width, height);
     }
 }
@@ -178,130 +184,51 @@ void Texture::save(std::string path)
 {
     size_t pos = path.find(".png");
 
-    if (pos > path.length())
-    {
+    if (pos > path.length()) {
         this->saveExr(path);
     }
-    else
-    {
+    else {
         this->savePng(path);
     }
 }
 
 void Texture::saveExr(std::string path)
 {
-    if (this->type == TextureType::FLOAT_ALPHA)
-    {
+    if (this->type == TextureType::FLOAT_ALPHA) {
         uint64_t hostData = this->data;
 
-        const char *err = nullptr;
-        SaveEXR((float *)hostData, this->resolution.x, this->resolution.y, 4, 0, path.c_str(), &err);
-
+        const char* err = nullptr;
+        SaveEXR((float*)hostData, this->resolution.x, this->resolution.y, 4, 0, path.c_str(), &err);
+        
         if (err == nullptr)
             std::cout << "Saved EXR: " << path << std::endl;
         else
             std::cerr << "Could not save EXR: " << err << std::endl;
     }
-    else
-    {
+    else {
         std::cerr << "Cannot save to EXR: texture is not of type float." << std::endl;
     }
 }
 
-void Texture::savePng(std::string path)
+void Texture::savePng(std::string path) 
 {
-    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA)
-    {
+    if (this->type == TextureType::UNSIGNED_INTEGER_ALPHA) {
         uint64_t hostData = this->data;
-        const uint32_t *data = (const uint32_t *)hostData;
+        const uint32_t* data = (const uint32_t*)hostData;
 
         std::vector<uint32_t> pixels;
-        for (int y = 0; y < this->resolution.y; y++)
-        {
-            const uint32_t *line = data + (this->resolution.y - 1 - y) * this->resolution.x;
-            for (int x = 0; x < this->resolution.x; x++)
-            {
+        for (int y = 0; y < this->resolution.y; y++) {
+            const uint32_t* line = data + (this->resolution.y - 1 - y) * this->resolution.x;
+            for (int x = 0; x < this->resolution.x; x++) {
                 pixels.push_back(line[x] | (0xff << 24));
             }
         }
 
-        stbi_write_png(path.c_str(), this->resolution.x, this->resolution.y, 4, data,
-                       this->resolution.x * sizeof(uint32_t));
+        stbi_write_png(path.c_str(), this->resolution.x, this->resolution.y, 4, data, this->resolution.x * sizeof(uint32_t));
 
         std::cout << "Saved PNG: " << path << std::endl;
     }
-    else
-    {
+    else {
         std::cerr << "Cannot save to PNG: texture is not of type uint32." << std::endl;
-    }
-}
-
-Vector3f Texture::nearestNeighbourFetch(Vector2f uv)
-{
-    return loadPixelColor(std::round(uv[0] * resolution.x), std::round(uv[1] * resolution.y));
-}
-
-Vector3f Texture::bilinearFetch(Vector2f uv)
-{
-    /*
-    0  1
-     uv
-    2  3
-    */
-    uv.x *= resolution.x;
-    uv.y *= resolution.y;
-    if (resolution.x == std::floor(resolution.x) && resolution.y == std::floor(resolution.y))
-    {
-        return loadPixelColor(uv.x, uv.y);
-    }
-    else if (uv.x == std::floor(uv.x))
-    {
-        Vector2f up{uv.x, std::floor(uv.y)};
-        Vector2f down{uv.x, std::floor(uv.y + 1)};
-        Vector3f color_up{loadPixelColor(up.x, up.y)};
-        Vector3f color_down{loadPixelColor(down.x, down.y)};
-        return (uv.y - up.y) * color_up + (down.y - uv.y) * color_down;
-    }
-    else if (uv.y == std::floor(uv.y))
-    {
-        Vector2f left{std::floor(uv.x), uv.y};
-        Vector2f right{std::floor(uv.x + 1), uv.y};
-        Vector3f color_left{loadPixelColor(left.x, left.y)};
-        Vector3f color_right{loadPixelColor(right.x, right.y)};
-        return (uv.x - left.x) * color_left + (right.x - uv.x) * color_right;
-    }
-    else
-    {
-        Vector2f tl{std::floor(uv[0]), std::floor(uv[1])};
-        std::array<Vector2f, 4> p{tl, {tl.x + 1, tl.y}, {tl.x, tl.y + 1}, {tl.x + 1, tl.y + 1}};
-        std::array<Vector3f, 4> c{};
-        std::transform(p.begin(), p.end(), c.begin(), [this](const Vector2f &pos) {
-            return Vector3f{loadPixelColor(static_cast<int>(pos.x), static_cast<int>(pos.y))};
-        });
-
-        return ((uv.y - p[0].y) * ((uv.x - p[0].x) * c[0] + (p[1].x - uv.x) * c[1]) +
-                (p[2].y - uv.y) * ((uv.x - p[2].x) * c[2] + (p[3].x - uv.x) * c[3]));
-    }
-}
-
-Vector3f Texture::fetch(Tri tri, Vector3f p, int interpolation_variant)
-{
-    const float fullArea{Tri::area(tri.v1, tri.v2, tri.v3)};
-    const float gamma{Tri::area(tri.v1, tri.v2, p) / fullArea};
-    const float alpha{Tri::area(tri.v2, tri.v3, p) / fullArea};
-    const float beta{Tri::area(tri.v3, tri.v1, p) / fullArea};
-    const Vector2f uv{alpha * tri.uv1 + beta * tri.uv2 + gamma * tri.uv3};
-    if (interpolation_variant == 0)
-    {
-        return nearestNeighbourFetch(uv);
-    }
-    else if (interpolation_variant == 1)
-    {
-        return bilinearFetch(uv);
-    }
-    else
-    {
-        std::cerr << "Invalid interpolation variant" << std::endl;
-        return {};
     }
 }

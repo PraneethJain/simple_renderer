@@ -1,39 +1,32 @@
 #pragma once
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <chrono>
+#include <cmath>
+#include <bitset>
 
 #include "vec.h"
+#include "random.h"
+#include "interaction.h"
 
 #include "json/include/nlohmann/json.hpp"
 
-struct Ray
-{
+#define M_PI 3.14159263f
+
+struct Ray {
     Vector3f o, d;
     float t = 1e30f;
     float tmax = 1e30f;
 
+
     Ray(Vector3f origin, Vector3f direction, float t = 1e30f, float tmax = 1e30f)
-        : o(origin), d(direction), t(t), tmax(tmax){};
+        : o(origin), d(direction), t(t), tmax(tmax) {};
 };
 
-struct Interaction
-{
-    Vector3f p, n;
-    float t = 1e30f;
-    bool didIntersect = false;
-    uint32_t surfIdx = UINT32_MAX;
-    uint32_t triIdx = UINT32_MAX;
-    Vector2f uv;
-};
-
-struct AABB
-{
+struct AABB {
     Vector3f min = Vector3f(1e30f, 1e30f, 1e30f);
     Vector3f max = Vector3f(-1e30f, -1e30f, -1e30f);
     Vector3f centroid = Vector3f(0.f, 0.f, 0.f);
@@ -50,32 +43,7 @@ struct AABB
     }
 };
 
-struct Tri
-{
-    Vector3f v1, v2, v3;
-    Vector2f uv1, uv2, uv3;
-    Vector3f normal;
-    Vector3f centroid;
-
-    AABB bbox;
-
-    Vector2f getUV(Vector3f p)
-    {
-        const float fullArea{Tri::area(v1, v2, v3)};
-        const float gamma{Tri::area(v1, v2, p) / fullArea};
-        const float alpha{Tri::area(v2, v3, p) / fullArea};
-        const float beta{Tri::area(v3, v1, p) / fullArea};
-        return alpha * uv1 + beta * uv2 + gamma * uv3;
-    }
-
-    static float area(Vector3f v1, Vector3f v2, Vector3f v3)
-    {
-        return Cross(v1 - v2, v1 - v3).Length() / 2.f;
-    }
-};
-
-struct BVHNode
-{
+struct BVHNode {
     AABB bbox;
     uint32_t left = 0, right = 0;
     uint32_t firstPrim = 0, primCount = 0;

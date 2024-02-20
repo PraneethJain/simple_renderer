@@ -6,8 +6,6 @@ project(cs7302
   LANGUAGES C CXX
 )
 
-set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0/")
-
 if (APPLE)
 	set(CMAKE_MACOSX_RPATH ON)
 endif()
@@ -17,7 +15,7 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -42,11 +40,12 @@ include_directories(
 add_executable(render
 	render.cpp
 
-	scene.cpp
+	bsdf.cpp
 	camera.cpp
+	light.cpp
+	scene.cpp
 	surface.cpp
 	texture.cpp
-	light.cpp
 
 	# DEPS
   	extern/tinyexr/deps/miniz/miniz.c

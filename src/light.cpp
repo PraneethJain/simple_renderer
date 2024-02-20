@@ -1,43 +1,56 @@
 #include "light.h"
 
-std::vector<Light> loadLights(const nlohmann::json &sceneConfig)
-{
-    std::vector<Light> lights{};
-    auto point_lights = sceneConfig["pointLights"];
-    for (auto point_light : point_lights)
-    {
-        auto location = point_light["location"];
-        auto radiance = point_light["radiance"];
-        lights.push_back({.light_type = POINT_LIGHT,
-                          .radiance = Vector3f(radiance[0], radiance[1], radiance[2]),
-                          .v = Vector3f(location[0], location[1], location[2])});
+Light::Light(LightType type, nlohmann::json config) {
+    switch (type) {
+        case LightType::POINT_LIGHT:
+            this->position = Vector3f(config["location"][0], config["location"][1], config["location"][2]);
+            break;
+        case LightType::DIRECTIONAL_LIGHT:
+            this->direction = Vector3f(config["direction"][0], config["direction"][1], config["direction"][2]);
+            break;
+        case LightType::AREA_LIGHT:
+            // TODO: Implement this
+            break;
+        default:
+            std::cout << "WARNING: Invalid light type detected";
+            break;
     }
-    auto directional_lights = sceneConfig["directionalLights"];
-    for (auto directional_light : directional_lights)
-    {
-        auto direction = directional_light["direction"];
-        auto radiance = directional_light["radiance"];
-        lights.push_back({.light_type = DIRECTIONAL_LIGHT,
-                          .radiance = Vector3f(radiance[0], radiance[1], radiance[2]),
-                          .v = Vector3f(direction[0], direction[1], direction[2])});
-    }
-    return lights;
+
+    this->radiance = Vector3f(config["radiance"][0], config["radiance"][1], config["radiance"][2]);
+    this->type = type;
 }
 
-Vector3f Light::shade(const Interaction &si, Vector3f color)
-{
+std::pair<Vector3f, LightSample> Light::sample(Interaction *si) {
+    LightSample ls;
+    memset(&ls, 0, sizeof(ls));
 
-    if (this->light_type == POINT_LIGHT)
-    {
-        auto w{this->v - si.p};
-        auto normalized_w{Normalize(w)};
-        return color * this->radiance * Dot(normalized_w, si.n) / (w.LengthSquared() * M_PI);
+    Vector3f radiance;
+    switch (type) {
+        case LightType::POINT_LIGHT:
+            ls.wo = (position - si->p);
+            ls.d = ls.wo.Length();
+            ls.wo = Normalize(ls.wo);
+            radiance = (1.f / (ls.d * ls.d)) * this->radiance;
+            break;
+        case LightType::DIRECTIONAL_LIGHT:
+            ls.wo = Normalize(direction);
+            ls.d = 1e10;
+            radiance = this->radiance;
+            break;
+        case LightType::AREA_LIGHT:
+            // TODO: Implement this
+            break;
     }
-    else if (this->light_type == DIRECTIONAL_LIGHT)
-    {
-        return color * this->radiance * Dot(si.n, this->v) / M_PI;
+    return { radiance, ls };
+}
+
+Interaction Light::intersectLight(Ray *ray) {
+    Interaction si;
+    memset(&si, 0, sizeof(si));
+
+    if (type == LightType::AREA_LIGHT) {
+        // TODO: Implement this
     }
 
-    std::cerr << "Invalid light source!" << std::endl;
-    return Vector3f{};
+    return si;
 }
