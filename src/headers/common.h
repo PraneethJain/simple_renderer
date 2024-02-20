@@ -1,32 +1,33 @@
 #pragma once
 
+#include <bitset>
+#include <chrono>
+#include <cmath>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <chrono>
-#include <cmath>
-#include <bitset>
 
-#include "vec.h"
-#include "random.h"
 #include "interaction.h"
+#include "random.h"
+#include "vec.h"
 
 #include "json/include/nlohmann/json.hpp"
 
 #define M_PI 3.14159263f
 
-struct Ray {
+struct Ray
+{
     Vector3f o, d;
     float t = 1e30f;
     float tmax = 1e30f;
 
-
     Ray(Vector3f origin, Vector3f direction, float t = 1e30f, float tmax = 1e30f)
-        : o(origin), d(direction), t(t), tmax(tmax) {};
+        : o(origin), d(direction), t(t), tmax(tmax){};
 };
 
-struct AABB {
+struct AABB
+{
     Vector3f min = Vector3f(1e30f, 1e30f, 1e30f);
     Vector3f max = Vector3f(-1e30f, -1e30f, -1e30f);
     Vector3f centroid = Vector3f(0.f, 0.f, 0.f);
@@ -43,7 +44,8 @@ struct AABB {
     }
 };
 
-struct BVHNode {
+struct BVHNode
+{
     AABB bbox;
     uint32_t left = 0, right = 0;
     uint32_t firstPrim = 0, primCount = 0;

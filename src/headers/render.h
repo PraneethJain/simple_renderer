@@ -2,8 +2,9 @@
 
 #include "scene.h"
 
-struct Integrator {
-    Integrator(Scene& scene);
+struct Integrator
+{
+    Integrator(Scene &scene);
 
     long long render();
 

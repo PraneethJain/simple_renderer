@@ -1,10 +1,11 @@
 #pragma once
 
 #include "camera.h"
-#include "surface.h"
 #include "light.h"
+#include "surface.h"
 
-struct Scene {
+struct Scene
+{
     std::vector<Surface> surfaces;
     std::vector<uint32_t> surfaceIdxs;
     std::vector<Light> lights;
@@ -12,21 +13,21 @@ struct Scene {
     Vector2i imageResolution;
 
     AABB bbox;
-    BVHNode* nodes;
+    BVHNode *nodes;
     int numBVHNodes = 0;
 
-    Scene() {};
+    Scene(){};
     Scene(std::string sceneDirectory, std::string sceneJson);
     Scene(std::string pathToJson);
-    
+
     void parse(std::string sceneDirectory, nlohmann::json sceneConfig);
 
     void buildBVH();
     uint32_t getIdx(uint32_t idx);
     void updateNodeBounds(uint32_t nodeIdx);
     void subdivideNode(uint32_t nodeIdx);
-    void intersectBVH(uint32_t nodeIdx, Ray& ray, Interaction& si);
+    void intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si);
 
-    Interaction rayIntersect(Ray& ray);
-    Interaction rayEmitterIntersect(Ray& ray);
+    Interaction rayIntersect(Ray &ray);
+    Interaction rayEmitterIntersect(Ray &ray);
 };
