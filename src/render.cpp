@@ -6,34 +6,32 @@ Integrator::Integrator(Scene &scene)
     this->outputImage.allocate(TextureType::UNSIGNED_INTEGER_ALPHA, this->scene.imageResolution);
 }
 
-long long Integrator::render(int variant)
+long long Integrator::render()
 {
     auto startTime = std::chrono::high_resolution_clock::now();
-    for (int x = 0; x < this->scene.imageResolution.x; x++)
-    {
-        for (int y = 0; y < this->scene.imageResolution.y; y++)
-        {
-            Ray cameraRay = this->scene.camera.generateRay(x, y);
-            Interaction si{};
-            switch (variant)
-            {
-            case 0:
-            case 1:
-                si = this->scene.rayIntersect(cameraRay, variant);
-                break;
-            case 2:
-            case 3:
-                si = this->scene.rayBVHIntersect(cameraRay, variant);
-                break;
-            default:
-                std::cerr << "intersection_variant must be one of 0, 1, 2, 3\n";
-                exit(1);
-            }
 
-            if (si.didIntersect)
-                this->outputImage.writePixelColor(0.5f * (si.n + Vector3f(1.f, 1.f, 1.f)), x, y);
-            else
-                this->outputImage.writePixelColor(Vector3f(0.f, 0.f, 0.f), x, y);
+    for (int x{0}; x < scene.imageResolution.x; ++x)
+    {
+        for (int y{0}; y < scene.imageResolution.y; ++y)
+        {
+            Ray cameraRay{scene.camera.generateRay(x, y)};
+            Interaction si{scene.rayIntersect(cameraRay)};
+            Vector3f color{};
+            for (auto light : scene.lights)
+            {
+                if (scene.lightIntersect(si, light) && si.surfIdx != UINT32_MAX && si.triIdx != UINT32_MAX)
+                {
+                    Vector3f textureColor{1, 1, 1};
+                    if (scene.surfaces[si.surfIdx].hasDiffuseTexture())
+                    {
+                        textureColor = scene.surfaces[si.surfIdx].diffuseTexture.fetch(
+                            scene.surfaces[si.surfIdx].tris[si.triIdx], si.p, this->scene.interpolation_variant);
+                    }
+
+                    color += light.shade(si, textureColor);
+                }
+            }
+            outputImage.writePixelColor(color, x, y);
         }
     }
     auto finishTime = std::chrono::high_resolution_clock::now();
@@ -45,14 +43,13 @@ int main(int argc, char **argv)
 {
     if (argc != 4)
     {
-        std::cerr << "Usage: ./render <scene_config> <output_path> <intersection_variant>";
+        std::cerr << "Usage: ./render <scene_config> <out_path> <interpolation_variant>";
         return 1;
     }
     Scene scene(argv[1]);
-
+    scene.interpolation_variant = static_cast<int>(strtol(argv[3], NULL, 10));
     Integrator rayTracer(scene);
-    int variant{static_cast<int>(strtol(argv[3], NULL, 10))};
-    auto renderTime = rayTracer.render(variant);
+    auto renderTime = rayTracer.render();
 
     std::cout << "Render Time: " << std::to_string(renderTime / 1000.f) << " ms" << std::endl;
     rayTracer.outputImage.save(argv[2]);

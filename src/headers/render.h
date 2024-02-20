@@ -2,11 +2,10 @@
 
 #include "scene.h"
 
-struct Integrator
-{
-    Integrator(Scene &scene);
+struct Integrator {
+    Integrator(Scene& scene);
 
-    long long render(int variant);
+    long long render();
 
     Scene scene;
     Texture outputImage;

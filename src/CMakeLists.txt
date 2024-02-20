@@ -17,7 +17,7 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -46,6 +46,7 @@ add_executable(render
 	camera.cpp
 	surface.cpp
 	texture.cpp
+	light.cpp
 
 	# DEPS
   	extern/tinyexr/deps/miniz/miniz.c
