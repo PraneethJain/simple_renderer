@@ -9,7 +9,7 @@ prep:
 build:
     make -j8 -C src/build
 
-run-all spp: 
-    src/build/render "assignment_3/Question 1/directional_light.json" temp.png {{spp}} 0
-    imv temp.png
-    rm temp.png
+run-all spp: (run-q1 spp)
+
+run-q1 spp:
+    src/build/render "assignment_3/Question 1/directional_light.json" "outputs/q1.png" {{spp}} 0

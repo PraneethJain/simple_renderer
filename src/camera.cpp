@@ -36,3 +36,13 @@ Ray Camera::generateRay(int x, int y)
 
     return Ray(this->from, direction);
 }
+
+Ray Camera::generateRandomRay(int x, int y)
+{
+    Vector3f pixelCenter = this->upperLeft + next_float() * (this->pixelDeltaU + this->pixelDeltaV);
+    pixelCenter = pixelCenter + x * this->pixelDeltaU + y * this->pixelDeltaV;
+
+    Vector3f direction = Normalize(pixelCenter - this->from);
+
+    return Ray(this->from, direction);
+}
