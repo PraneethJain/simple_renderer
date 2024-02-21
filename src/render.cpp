@@ -19,6 +19,7 @@ long long Integrator::render()
             {
                 Ray cameraRay = this->scene.camera.generateRandomRay(x, y);
                 Interaction si = this->scene.rayIntersect(cameraRay);
+                result += this->scene.rayEmitterIntersect(cameraRay).emissiveColor;
 
                 if (si.didIntersect)
                 {

@@ -11,7 +11,10 @@ Light::Light(LightType type, nlohmann::json config)
         this->direction = Vector3f(config["direction"][0], config["direction"][1], config["direction"][2]);
         break;
     case LightType::AREA_LIGHT:
-        // TODO: Implement this
+        this->center = Vector3f(config["center"][0], config["center"][1], config["center"][2]);
+        this->vx = Vector3f(config["vx"][0], config["vx"][1], config["vx"][2]);
+        this->vy = Vector3f(config["vy"][0], config["vy"][1], config["vy"][2]);
+        this->normal = Vector3f(config["normal"][0], config["normal"][1], config["normal"][2]);
         break;
     default:
         std::cout << "WARNING: Invalid light type detected";
@@ -52,11 +55,23 @@ Interaction Light::intersectLight(Ray *ray)
 {
     Interaction si;
     memset(&si, 0, sizeof(si));
-
     if (type == LightType::AREA_LIGHT)
     {
-        // TODO: Implement this
+        float dDotN = Dot(ray->d, this->normal);
+        if (dDotN != 0.f)
+        {
+            float t{-Dot((ray->o - this->center), this->normal) / dDotN};
+            Vector3f p{ray->o + ray->d * t};
+            if (t >= 0.f and std::abs(Dot(this->center - p, vx)) < vx.LengthSquared() and
+                std::abs(Dot(this->center - p, vy)) < vy.LengthSquared())
+            {
+                si.didIntersect = true;
+                si.t = t;
+                si.n = this->normal;
+                si.p = p;
+                si.emissiveColor = this->radiance;
+            }
+        }
     }
-
     return si;
 }
