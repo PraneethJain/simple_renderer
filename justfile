@@ -21,7 +21,7 @@ run-q2 spp: build
     src/build/render "assignment_3/Question 2/scene4.json" "outputs/q2_4.png" {{spp}} 0
 
 run-q3 spp: build
-    src/build/render "assignment_3/Question 3/big.json" "outputs/q3_big.png" {{spp}} 0
-    src/build/render "assignment_3/Question 3/many.json" "outputs/q3_many.png" {{spp}} 0
-    src/build/render "assignment_3/Question 3/med.json" "outputs/q3_med.png" {{spp}} 0
-    src/build/render "assignment_3/Question 3/small.json" "outputs/q3_small.png" {{spp}} 0
+    src/build/render "assignment_3/Question 3/big.json" "outputs/q3_big_{{spp}}.png" {{spp}} 0
+    src/build/render "assignment_3/Question 3/many.json" "outputs/q3_many_{{spp}}.png" {{spp}} 0
+    src/build/render "assignment_3/Question 3/med.json" "outputs/q3_med_{{spp}}.png" {{spp}} 0
+    src/build/render "assignment_3/Question 3/small.json" "outputs/q3_small_{{spp}}.png" {{spp}} 0
