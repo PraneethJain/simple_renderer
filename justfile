@@ -20,7 +20,7 @@ run-q2 spp variant:
     src/build/render "assignment_3/Question 2/scene3.json" "outputs/q2_3.png" {{spp}} {{variant}}
     src/build/render "assignment_3/Question 2/scene4.json" "outputs/q2_4.png" {{spp}} {{variant}}
 
-run-q3 spp variant: build
+run-q3 spp variant:
     src/build/render "assignment_3/Question 3/big.json" "outputs/{{variant}}/q3_big_{{spp}}.png" {{spp}} {{variant}}
     src/build/render "assignment_3/Question 3/many.json" "outputs/{{variant}}/q3_many_{{spp}}.png" {{spp}} {{variant}}
     src/build/render "assignment_3/Question 3/med.json" "outputs/{{variant}}/q3_med_{{spp}}.png" {{spp}} {{variant}}
