@@ -6,11 +6,11 @@
 
 <div align="center">
 
-| Sampling Method        | small | med  | big  | many |
-| ---------------------- | ----- | ---- | ---- | ---- |
-| Uniform Hemisphere (0) | 9.1s  | 9.3s | 8.9s | 9.6s |
-| Cosine Weighted (1)    | 9.2s  | 9.4s | 9.2s | 9.9s |
-| Light (2)              |       |      |      |      |
+| Sampling Method        | small | med   | big   | many  |
+| ---------------------- | ----- | ----- | ----- | ----- |
+| Uniform Hemisphere (0) | 9.1s  | 9.3s  | 8.9s  | 9.6s  |
+| Cosine Weighted (1)    | 9.2s  | 9.4s  | 9.2s  | 9.9s  |
+| Light (2)              | 8.26s | 8.42s | 8.47s | 8.40s |
 
 </div>
 
@@ -30,10 +30,10 @@
 
 <div align="center">
 
-| Sampling Method        | small | med | big | many |
-| ---------------------- | ----- | --- | --- | ---- |
-| Uniform Hemisphere (0) |       |     |     |      |
-| Cosine Weighted (1)    |       |     |     |      |
-| Light (2)              |       |     |     |      |
+| Sampling Method        | small | med  | big  | many |
+| ---------------------- | ----- | ---- | ---- | ---- |
+| Uniform Hemisphere (0) | 909s  | 858s | 855s | 882s |
+| Cosine Weighted (1)    |       |      |      |      |
+| Light (2)              |       |      |      |      |
 
 </div>
