@@ -15,13 +15,11 @@ long long Integrator::render()
     {
         for (int y = 0; y < this->scene.imageResolution.y; y++)
         {
-            Ray centerRay = this->scene.camera.generateRay(x, y);
-            Vector3f result{this->spp * this->scene.rayEmitterIntersect(centerRay).emissiveColor};
+            Vector3f result{};
             for (int _ = 0; _ < this->spp; ++_)
             {
                 Ray cameraRay = this->scene.camera.generateRandomRay(x, y);
                 Interaction si = this->scene.rayIntersect(cameraRay);
-
                 if (si.didIntersect)
                 {
                     if (this->sampling_strategy == 0)
@@ -72,6 +70,13 @@ long long Integrator::render()
                 }
             }
             result /= this->spp;
+
+            Ray centerRay = this->scene.camera.generateRay(x, y);
+            Interaction siDirectLight = this->scene.rayEmitterIntersect(centerRay);
+            if (siDirectLight.didIntersect)
+            {
+                result = siDirectLight.emissiveColor;
+            }
             this->outputImage.writePixelColor(result, x, y);
         }
     }
