@@ -45,7 +45,12 @@ std::pair<Vector3f, LightSample> Light::sample(Interaction *si)
         radiance = this->radiance;
         break;
     case LightType::AREA_LIGHT:
-        // TODO: Implement this
+        float area{this->vx.Length() * this->vy.Length() * 4};
+        Vector3f pos{this->center + 2 * (next_float() - 0.5f) * this->vx + 2 * (next_float() - 0.5f) * this->vy};
+        ls.wo = pos - si->p;
+        ls.d = ls.wo.Length();
+        ls.wo = Normalize(ls.wo);
+        radiance = this->radiance * area / (ls.d * ls.d) * Dot(this->normal, -ls.wo);
         break;
     }
     return {radiance, ls};

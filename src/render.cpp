@@ -15,12 +15,12 @@ long long Integrator::render()
     {
         for (int y = 0; y < this->scene.imageResolution.y; y++)
         {
-            Vector3f result(0, 0, 0);
+            Ray centerRay = this->scene.camera.generateRay(x, y);
+            Vector3f result{this->spp * this->scene.rayEmitterIntersect(centerRay).emissiveColor};
             for (int _ = 0; _ < this->spp; ++_)
             {
                 Ray cameraRay = this->scene.camera.generateRandomRay(x, y);
                 Interaction si = this->scene.rayIntersect(cameraRay);
-                result += this->scene.rayEmitterIntersect(cameraRay).emissiveColor;
 
                 if (si.didIntersect)
                 {
@@ -57,17 +57,16 @@ long long Integrator::render()
                     {
                         Vector3f radiance;
                         LightSample ls;
-                        for (Light &light : this->scene.lights)
+                        int n{static_cast<int>(this->scene.lights.size())};
+                        Light light{this->scene.lights[static_cast<int>(std::floor(next_float() * n))]};
+                        std::tie(radiance, ls) = light.sample(&si);
+
+                        Ray shadowRay(si.p + 1e-3f * si.n, ls.wo);
+                        Interaction siShadow = this->scene.rayIntersect(shadowRay);
+
+                        if (!siShadow.didIntersect || siShadow.t > ls.d)
                         {
-                            std::tie(radiance, ls) = light.sample(&si);
-
-                            Ray shadowRay(si.p + 1e-3f * si.n, ls.wo);
-                            Interaction siShadow = this->scene.rayIntersect(shadowRay);
-
-                            if (!siShadow.didIntersect || siShadow.t > ls.d)
-                            {
-                                result += si.bsdf->eval(&si, si.toLocal(ls.wo)) * radiance * std::abs(Dot(si.n, ls.wo));
-                            }
+                            result += n * si.bsdf->eval(&si, si.toLocal(ls.wo)) * radiance * std::abs(Dot(si.n, ls.wo));
                         }
                     }
                 }
