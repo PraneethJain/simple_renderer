@@ -24,21 +24,55 @@ long long Integrator::render()
 
                 if (si.didIntersect)
                 {
-                    Vector3f local_dir{uniform_sample_hemisphere()};
-                    Vector3f global_dir{si.toWorld(local_dir)};
-
-                    Ray lightRay{si.p + 1e-3f * si.n, global_dir};
-                    Interaction siLight{this->scene.rayEmitterIntersect(lightRay)};
-                    Interaction siShadow{this->scene.rayIntersect(lightRay)};
-
-                    if (siLight.didIntersect and siLight.t < siShadow.t)
+                    if (this->sampling_strategy == 0)
                     {
-                        result +=
-                            si.bsdf->eval(&si, local_dir) * siLight.emissiveColor * std::abs(Dot(si.n, global_dir));
+                        Vector3f local_dir{uniform_sample_hemisphere()};
+                        Vector3f global_dir{si.toWorld(local_dir)};
+
+                        Ray lightRay{si.p + 1e-3f * si.n, global_dir};
+                        Interaction siLight{this->scene.rayEmitterIntersect(lightRay)};
+                        Interaction siShadow{this->scene.rayIntersect(lightRay)};
+
+                        if (siLight.didIntersect and siLight.t < siShadow.t)
+                        {
+                            result += 2 * M_PIf * si.bsdf->eval(&si, local_dir) * siLight.emissiveColor *
+                                      std::abs(Dot(si.n, global_dir));
+                        }
+                    }
+                    else if (this->sampling_strategy == 1)
+                    {
+                        Vector3f local_dir{weighted_sample_cosine()};
+                        Vector3f global_dir{si.toWorld(local_dir)};
+
+                        Ray lightRay{si.p + 1e-3f * si.n, global_dir};
+                        Interaction siLight{this->scene.rayEmitterIntersect(lightRay)};
+                        Interaction siShadow{this->scene.rayIntersect(lightRay)};
+
+                        if (siLight.didIntersect and siLight.t < siShadow.t)
+                        {
+                            result += M_PIf * si.bsdf->eval(&si, local_dir) * siLight.emissiveColor;
+                        }
+                    }
+                    else if (this->sampling_strategy == 2)
+                    {
+                        Vector3f radiance;
+                        LightSample ls;
+                        for (Light &light : this->scene.lights)
+                        {
+                            std::tie(radiance, ls) = light.sample(&si);
+
+                            Ray shadowRay(si.p + 1e-3f * si.n, ls.wo);
+                            Interaction siShadow = this->scene.rayIntersect(shadowRay);
+
+                            if (!siShadow.didIntersect || siShadow.t > ls.d)
+                            {
+                                result += si.bsdf->eval(&si, si.toLocal(ls.wo)) * radiance * std::abs(Dot(si.n, ls.wo));
+                            }
+                        }
                     }
                 }
             }
-            result *= 2 * M_PIf / this->spp;
+            result /= this->spp;
             this->outputImage.writePixelColor(result, x, y);
         }
     }

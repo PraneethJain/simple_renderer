@@ -411,21 +411,8 @@ void Surface::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
 
                 si.b = si.c;
                 si.b[min_index] = 0;
-                if (min_index == 0)
-                {
-                    std::swap(si.b.y, si.b.z);
-                    si.b.z *= -1;
-                }
-                else if (min_index == 1)
-                {
-                    std::swap(si.b.x, si.b.z);
-                    si.b.z *= -1;
-                }
-                else if (min_index == 2)
-                {
-                    std::swap(si.b.x, si.b.y);
-                    si.b.y *= -1;
-                }
+                std::swap(si.b[(min_index + 1) % 3], si.b[(min_index + 2) % 3]);
+                si.b[(min_index + 2) % 3] *= -1;
 
                 si.b = Normalize(si.b);
                 si.a = Cross(si.b, si.c);
