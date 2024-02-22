@@ -33,7 +33,7 @@
 | Sampling Method        | small | med  | big  | many |
 | ---------------------- | ----- | ---- | ---- | ---- |
 | Uniform Hemisphere (0) | 909s  | 858s | 855s | 882s |
-| Cosine Weighted (1)    |       |      |      |      |
+| Cosine Weighted (1)    | 894s  | 893s | 884s | 912s |
 | Light (2)              |       |      |      |      |
 
 </div>
