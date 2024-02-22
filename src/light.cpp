@@ -63,7 +63,7 @@ Interaction Light::intersectLight(Ray *ray)
             float t{-Dot((ray->o - this->center), this->normal) / dDotN};
             Vector3f p{ray->o + ray->d * t};
             if (t >= 0.f and std::abs(Dot(this->center - p, vx)) < vx.LengthSquared() and
-                std::abs(Dot(this->center - p, vy)) < vy.LengthSquared())
+                std::abs(Dot(this->center - p, vy)) < vy.LengthSquared() and Dot(this->normal, ray->d) < 0.f)
             {
                 si.didIntersect = true;
                 si.t = t;

@@ -1,10 +1,11 @@
 #include "render.h"
 
-Integrator::Integrator(Scene &scene, int spp)
+Integrator::Integrator(Scene &scene, int spp, int sampling_strategy)
 {
     this->scene = scene;
     this->spp = spp;
     this->outputImage.allocate(TextureType::UNSIGNED_INTEGER_ALPHA, this->scene.imageResolution);
+    this->sampling_strategy = sampling_strategy;
 }
 
 long long Integrator::render()
@@ -23,23 +24,21 @@ long long Integrator::render()
 
                 if (si.didIntersect)
                 {
-                    Vector3f radiance;
-                    LightSample ls;
-                    for (Light &light : this->scene.lights)
+                    Vector3f local_dir{uniform_sample_hemisphere()};
+                    Vector3f global_dir{si.toWorld(local_dir)};
+
+                    Ray lightRay{si.p + 1e-3f * si.n, global_dir};
+                    Interaction siLight{this->scene.rayEmitterIntersect(lightRay)};
+                    Interaction siShadow{this->scene.rayIntersect(lightRay)};
+
+                    if (siLight.didIntersect and siLight.t < siShadow.t)
                     {
-                        std::tie(radiance, ls) = light.sample(&si);
-
-                        Ray shadowRay(si.p + 1e-3f * si.n, ls.wo);
-                        Interaction siShadow = this->scene.rayIntersect(shadowRay);
-
-                        if (!siShadow.didIntersect || siShadow.t > ls.d)
-                        {
-                            result += si.bsdf->eval(&si, si.toLocal(ls.wo)) * radiance * std::abs(Dot(si.n, ls.wo));
-                        }
+                        result +=
+                            si.bsdf->eval(&si, local_dir) * siLight.emissiveColor * std::abs(Dot(si.n, global_dir));
                     }
                 }
             }
-            result /= this->spp;
+            result *= 2 * M_PIf / this->spp;
             this->outputImage.writePixelColor(result, x, y);
         }
     }
@@ -58,7 +57,8 @@ int main(int argc, char **argv)
     Scene scene(argv[1]);
 
     int spp = atoi(argv[3]);
-    Integrator rayTracer(scene, spp);
+    int sampling_strategy = atoi(argv[4]);
+    Integrator rayTracer(scene, spp, sampling_strategy);
     auto renderTime = rayTracer.render();
 
     std::cout << "Render Time: " << std::to_string(renderTime / 1000.f) << " ms" << std::endl;

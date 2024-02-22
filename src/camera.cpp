@@ -39,10 +39,10 @@ Ray Camera::generateRay(int x, int y)
 
 Ray Camera::generateRandomRay(int x, int y)
 {
-    Vector3f pixelCenter = this->upperLeft + next_float() * this->pixelDeltaU + next_float() * this->pixelDeltaV;
-    pixelCenter = pixelCenter + x * this->pixelDeltaU + y * this->pixelDeltaV;
+    Vector3f pos{this->upperLeft + next_float() * this->pixelDeltaU + next_float() * this->pixelDeltaV};
+    pos = pos + x * this->pixelDeltaU + y * this->pixelDeltaV;
 
-    Vector3f direction = Normalize(pixelCenter - this->from);
+    Vector3f direction{Normalize(pos - this->from)};
 
     return Ray(this->from, direction);
 }

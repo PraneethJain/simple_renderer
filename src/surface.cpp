@@ -402,11 +402,35 @@ void Surface::intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si)
 
                 si.bsdf = &this->bsdf;
 
-                // TODO: Obtain the ONB and store in interaction here
+                si.c = si.n;
+                int min_index{0};
+                if (abs(si.c.y) < abs(si.c.x))
+                    min_index = 1;
+                if (abs(si.c.z) < abs(si.c.y))
+                    min_index = 2;
 
-                // Set the view direction in local coordinates
-                // TODO: Uncomment this after implementing ONB
-                // si.wi = si.toLocal(-ray.d);
+                si.b = si.c;
+                si.b[min_index] = 0;
+                if (min_index == 0)
+                {
+                    std::swap(si.b.y, si.b.z);
+                    si.b.z *= -1;
+                }
+                else if (min_index == 1)
+                {
+                    std::swap(si.b.x, si.b.z);
+                    si.b.z *= -1;
+                }
+                else if (min_index == 2)
+                {
+                    std::swap(si.b.x, si.b.y);
+                    si.b.y *= -1;
+                }
+
+                si.b = Normalize(si.b);
+                si.a = Cross(si.b, si.c);
+
+                si.wi = si.toLocal(-ray.d);
             }
         }
     }

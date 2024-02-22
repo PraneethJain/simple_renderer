@@ -28,13 +28,16 @@ struct Interaction
 
     Vector3f toWorld(Vector3f w)
     {
-        // TODO: Implement this
-        return Vector3f(0, 0, 0);
+        Vector3f res{};
+        std::vector<Vector3f> ONB{a, b, c};
+        for (int i{0}; i < 3; ++i)
+            for (int j{0}; j < 3; ++j)
+                res[i] += ONB[j][i] * w[j];
+        return res;
     }
 
     Vector3f toLocal(Vector3f w)
     {
-        // TODO: Implement this
-        return Vector3f(0, 0, 0);
+        return {Dot(a, w), Dot(b, w), Dot(c, w)};
     }
 };
