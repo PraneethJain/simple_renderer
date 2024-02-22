@@ -267,6 +267,11 @@ template <typename T> class Vector3
         return std::sqrt(LengthSquared());
     }
 
+    friend auto operator<<(std::ostream &os, Vector3<T> const &v) -> std::ostream &
+    {
+        return os << "x: " << v.x << " y: " << v.y << " z: " << v.z;
+    }
+
     // Vector3 Public Data
     T x, y, z;
 };
