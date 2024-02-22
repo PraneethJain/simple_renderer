@@ -2,8 +2,6 @@
 
 ## Times
 
-> Measured in ms
-
 ### 10 spp
 
 <div align="center">
@@ -13,6 +11,8 @@
 | Uniform Hemisphere (0) | 8.7s  | 8.7s | 11.9s | 9.1s |
 | Cosine Weighted (1)    |       |      |       |      |
 | Light (2)              |       |      |       |      |
+
+</div>
 
 ### 100 spp
 
@@ -24,14 +24,16 @@
 | Cosine Weighted (1)    |       |       |       |       |
 | Light (2)              |       |       |       |       |
 
+</div>
+
 ### 1000 spp
 
 <div align="center">
 
-| Sampling Method        | small | med | big | many |
-| ---------------------- | ----- | --- | --- | ---- |
-| Uniform Hemisphere (0) |       |     |     |      |
-| Cosine Weighted (1)    |       |     |     |      |
-| Light (2)              |       |     |     |      |
+| Sampling Method        | small  | med    | big    | many   |
+| ---------------------- | ------ | ------ | ------ | ------ |
+| Uniform Hemisphere (0) | 903.8s | 858.4s | 877.5s | 910.4s |
+| Cosine Weighted (1)    |        |        |        |        |
+| Light (2)              |        |        |        |        |
 
 </div>
