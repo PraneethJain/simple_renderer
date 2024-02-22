@@ -70,10 +70,10 @@ long long Integrator::render()
                 }
             }
             result /= this->spp;
-
             Ray centerRay = this->scene.camera.generateRay(x, y);
             Interaction siDirectLight = this->scene.rayEmitterIntersect(centerRay);
-            if (siDirectLight.didIntersect)
+            Interaction siDirect = this->scene.rayIntersect(centerRay);
+            if (siDirectLight.didIntersect and siDirectLight.t < siDirect.t)
             {
                 result = siDirectLight.emissiveColor;
             }
