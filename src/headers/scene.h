@@ -1,7 +1,6 @@
 #pragma once
 
 #include "camera.h"
-#include "common.h"
 #include "light.h"
 #include "surface.h"
 
@@ -30,9 +29,5 @@ struct Scene
     void intersectBVH(uint32_t nodeIdx, Ray &ray, Interaction &si);
 
     Interaction rayIntersect(Ray &ray);
-
-    double ERROR{5e-6};
-    bool lightIntersect(const Interaction &si, const Light &light);
-
-    int interpolation_variant;
+    Interaction rayEmitterIntersect(Ray &ray);
 };

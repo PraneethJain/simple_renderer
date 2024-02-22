@@ -1,11 +1,7 @@
 #include "camera.h"
 
 Camera::Camera(Vector3f from, Vector3f to, Vector3f up, float fieldOfView, Vector2i imageResolution)
-    : from(from),
-    to(to),
-    up(up),
-    fieldOfView(fieldOfView),
-    imageResolution(imageResolution)
+    : from(from), to(to), up(up), fieldOfView(fieldOfView), imageResolution(imageResolution)
 {
     this->aspect = imageResolution.x / float(imageResolution.y);
 
@@ -37,6 +33,16 @@ Ray Camera::generateRay(int x, int y)
     pixelCenter = pixelCenter + x * this->pixelDeltaU + y * this->pixelDeltaV;
 
     Vector3f direction = Normalize(pixelCenter - this->from);
+
+    return Ray(this->from, direction);
+}
+
+Ray Camera::generateRandomRay(int x, int y)
+{
+    Vector3f pos{this->upperLeft + next_float() * this->pixelDeltaU + next_float() * this->pixelDeltaV};
+    pos = pos + x * this->pixelDeltaU + y * this->pixelDeltaV;
+
+    Vector3f direction{Normalize(pos - this->from)};
 
     return Ray(this->from, direction);
 }
